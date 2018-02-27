@@ -1,0 +1,14 @@
+{
+  "name": "glpi-api",
+  "version": "1.0.0",
+  "description": "Node module for GLPI REST API",
+  "main": "glpi.js",
+  "author": "Martial Séron <martial.seron@alturing.eu>",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "got": "^8.2.0",
+    "lodash": "^4.17.5",
+    "qs": "^6.5.1"
+  }
+}
