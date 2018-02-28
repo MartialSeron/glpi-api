@@ -2,6 +2,9 @@ const got = require('got');
 const { URL } = require('url');
 const qs = require('qs');
 const _ = require('lodash');
+const debug = require('debug');
+
+const log = debug('glpi-api');
 
 class MissingAuthorizationError extends Error {
   constructor(message, extra) {
@@ -90,7 +93,7 @@ class Glpi {
     };
     this._session = '';
 
-    console.log(this._settings);
+    log(this._settings);
   }
 
   /**
@@ -149,7 +152,7 @@ class Glpi {
       if (!req.body[k]) delete req.body[k];
     }
 
-    console.log('post req :',req);
+    log('post req :',req);
 
     return got.post(req.url, req)
     .then((res) => {
@@ -169,7 +172,7 @@ class Glpi {
 
     query = qs.stringify(options, { arrayFormat: 'indices',  addQueryPrefix: true });
 
-    console.log('query :', query);
+    log('query :', query);
     return query;
   }
 
@@ -278,7 +281,7 @@ class Glpi {
     const query = this._queryString(options);
     let path = `/${itemType}/${id}${query}`;
 
-    console.log('path :', path);
+    log('path :', path);
 
     return this._getRequest(path);
   }
@@ -300,7 +303,7 @@ class Glpi {
     const query = this._queryString(options);
     let path = `/${itemType}${query}`;
 
-    console.log('path :', path);
+    log('path :', path);
 
     return this._getRequest(path);
   }
@@ -340,7 +343,7 @@ class Glpi {
 
     path += this._queryString(options);
 
-    console.log('path :', path);
+    log('path :', path);
 
     return this._getRequest(path);
   }
@@ -371,7 +374,7 @@ class Glpi {
     const query = this._queryString(options);
     let path = `/getMultipleItems${query}`;
 
-    console.log('path :', path);
+    log('path :', path);
 
     return this._getRequest(path);
   }
@@ -386,7 +389,7 @@ class Glpi {
     const query = this._queryString(options);
     let path = `/listSearchOptions/${itemType}${query}`;
 
-    console.log('path :', path);
+    log('path :', path);
 
     return this._getRequest(path);
   }
@@ -410,12 +413,10 @@ class Glpi {
     const query = this._queryString(options);
     let path = `/search/${itemType}${query}`;
 
-    console.log('path :', path);
+    log('path :', path);
 
     return this._getRequest(path);
   }
-
-
-};
+}
 
 module.exports = Glpi;
