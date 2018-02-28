@@ -1,5 +1,5 @@
 const got = require('got');
-const { URL, URLSearchParams } = require('url');
+const { URL } = require('url');
 const qs = require('qs');
 const _ = require('lodash');
 
@@ -33,7 +33,41 @@ class MissingAPIURLError extends Error {
   }
 }
 
-module.exports = class Glpi {
+/** Class to manage access to GLPI via REST API */
+class Glpi {
+  /**
+   * Create a Glpi object
+   *
+   * Usage :
+   *
+   * ```
+   * const Glpi = require('./glpi');
+   * const glpi = new Glpi({
+   *   apiurl     : 'http://glpi.myserver.com/apirest.php',
+   *   user_token : 'q56hqkniwot8wntb3z1qarka5atf365taaa2uyjrn',
+   *   app_token  : 'f7g3csp8mgatg5ebc5elnazakw20i9fyev1qopya7',
+   * });
+   *
+   * // or
+   *
+   * const glpi = new Glpi({
+   *   apiurl     : 'http://glpi.myserver.com/apirest.php',
+   *   app_token  : 'f7g3csp8mgatg5ebc5elnazakw20i9fyev1qopya7',
+   *   auth       : {
+   *     username : 'glpi',
+   *     password : 'glpi',
+   *   }
+   * });
+   * ```
+   *
+   * @param {Object} settings
+   * @param {Object} settings.user_token Token used for user token authentication
+   * @param {Object} settings.auth 2 parameters to login with user authentication
+   * @param {Object} settings.auth.username username parameter used for user authentication
+   * @param {Object} settings.auth.password password parameter used for user authentication
+   * @param {Object} settings.app_token Authorization string provided by the GLPI api configuration
+   * @param {Object} settings.apiurl URL of the apirest.php file
+   */
   constructor(settings = {}) {
     if (!settings.user_token &&
        (!settings.auth || (!settings.auth.username || !settings.auth.password))) {
@@ -59,6 +93,12 @@ module.exports = class Glpi {
     console.log(this._settings);
   }
 
+  /**
+   * Return the appropriate string for authentication
+   * @param {Object} settings.auth 2 parameters to login with user authentication
+   * @param {Object} settings.auth.username username parameter used for user authentication
+   * @param {Object} settings.auth.password password parameter used for user authentication
+   */
   _getAuth(auth) {
     if (auth && auth.username) {
       const username = auth.username;
@@ -69,6 +109,10 @@ module.exports = class Glpi {
     return auth;
   }
 
+  /**
+   * Call a GET HTTP request and return response body
+   * @param {string} path path of the request
+   */
   _getRequest(path) {
     const req = {
       url     : `${this._settings.apiurl}${path}`,
@@ -303,5 +347,31 @@ module.exports = class Glpi {
     return this._getRequest(path);
   }
 
+  search(itemType, opts) {
+    let options = {
+      criteria     : [],
+      metacriteria : [],
+      sort         : 'id',
+      order        : 'DESC',
+      range        : '0-50',
+      forcedisplay : [],
+      rawdata      : false,
+      withindexes  : false,
+      uid_cols     : false,
+      giveItems    : false,
+    };
 
-}
+    Object.assign(options, opts);
+
+    const query = this._queryString(options);
+    let path = `/search/${itemType}${query}`;
+
+    console.log('path :', path);
+
+    return this._getRequest(path);
+  }
+
+
+};
+
+module.exports = Glpi;
