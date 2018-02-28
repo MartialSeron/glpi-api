@@ -126,10 +126,7 @@ class Glpi {
       }
     };
 
-    return got.get(req.url, req)
-    .then((res) => {
-      return res.body;
-    });
+    return got.get(req.url, req);
   }
 
 
@@ -154,10 +151,7 @@ class Glpi {
 
     log('post req :',req);
 
-    return got.post(req.url, req)
-    .then((res) => {
-      return res.body;
-    });
+    return got.post(req.url, req);
   }
 
   _queryString(options) {
@@ -199,7 +193,7 @@ class Glpi {
     return got.get(req.url, req)
     .then((res) => {
       this._session = res.body.session_token;
-      return res.body;
+      return res;
     });
   }
 
@@ -216,7 +210,7 @@ class Glpi {
     return got.get(req.url, req)
     .then((res) => {
       this._session = '';
-      return res.body;
+      return res;
     });
   }
 
