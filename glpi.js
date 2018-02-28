@@ -129,6 +129,34 @@ class Glpi {
     });
   }
 
+
+  /**
+   * Call a POST HTTP request
+   * @param {string} path path of the request
+   */
+  _postRequest(path, body) {
+    const req = {
+      url     : `${this._settings.apiurl}${path}`,
+      json    : true,
+      headers : {
+        'App-Token'     : this._settings.app_token,
+        'Session-Token' : this._session,
+      },
+      body: (body ? Object.assign({}, body) : {}),
+    };
+
+    for (let k in req.body) {
+      if (!req.body[k]) delete req.body[k];
+    }
+
+    console.log('post req :',req);
+
+    return got.post(req.url, req)
+    .then((res) => {
+      return res.body;
+    });
+  }
+
   _queryString(options) {
     let query = '';
     Object.keys(options).forEach((key) => {
@@ -195,6 +223,22 @@ class Glpi {
 
   getActiveProfile() {
     return this._getRequest('/getActiveProfile');
+  }
+
+  /**
+   * Change active profile to the profiles_id one.
+   * See getMyProfiles endpoint for possible profiles.
+   * @param {Object} opts
+   * @param {string|integer} opts.profiles_id  (default 'all') ID of the new active profile.
+   */
+  changeActiveProfile(opts) {
+    let options = {
+      profiles_id : 'all',
+    };
+
+    Object.assign(options, opts);
+
+    return this._postRequest('/changeActiveProfile', options);
   }
 
   getMyEntities() {
