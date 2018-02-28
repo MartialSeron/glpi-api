@@ -6,9 +6,17 @@
   "author": "Martial Séron <martial.seron@alturing.eu>",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "docs": "node_modules/.bin/jsdoc --configure .jsdoc.json -R README.md --verbose"
+  },
   "dependencies": {
     "got": "^8.2.0",
     "lodash": "^4.17.5",
     "qs": "^6.5.1"
+  },
+  "devDependencies": {
+    "docdash": "^0.4.0",
+    "eslint": "^4.18.1",
+    "jsdoc": "^3.5.5"
   }
 }

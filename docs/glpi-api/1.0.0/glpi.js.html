@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>glpi.js - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Glpi.html">Glpi</a><ul class='methods'><li data-type='method'><a href="Glpi.html#changeActiveProfile">changeActiveProfile</a></li></ul></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">glpi.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const got = require('got');
+const { URL } = require('url');
+const qs = require('qs');
+const _ = require('lodash');
+
+class MissingAuthorizationError extends Error {
+  constructor(message, extra) {
+    super();
+    Error.captureStackTrace(this, this.constructor);
+    this.name = 'MissingAuthorizationError';
+    this.message = message || 'Missing Authorization header';
+    if (extra) this.extra = extra;
+  }
+}
+
+class MissingAppTokenError extends Error {
+  constructor(message, extra) {
+    super();
+    Error.captureStackTrace(this, this.constructor);
+    this.name = 'MissingAppTokenError';
+    this.message = message || 'Missing App-Token header';
+    if (extra) this.extra = extra;
+  }
+}
+
+class MissingAPIURLError extends Error {
+  constructor(message, extra) {
+    super();
+    Error.captureStackTrace(this, this.constructor);
+    this.name = 'MissingAPIURLError';
+    this.message = message || 'Missing API URL header';
+    if (extra) this.extra = extra;
+  }
+}
+
+/** Class to manage access to GLPI via REST API */
+class Glpi {
+  /**
+   * Create a Glpi object
+   *
+   * Usage :
+   *
+   * ```
+   * const Glpi = require('./glpi');
+   * const glpi = new Glpi({
+   *   apiurl     : 'http://glpi.myserver.com/apirest.php',
+   *   user_token : 'q56hqkniwot8wntb3z1qarka5atf365taaa2uyjrn',
+   *   app_token  : 'f7g3csp8mgatg5ebc5elnazakw20i9fyev1qopya7',
+   * });
+   *
+   * // or
+   *
+   * const glpi = new Glpi({
+   *   apiurl     : 'http://glpi.myserver.com/apirest.php',
+   *   app_token  : 'f7g3csp8mgatg5ebc5elnazakw20i9fyev1qopya7',
+   *   auth       : {
+   *     username : 'glpi',
+   *     password : 'glpi',
+   *   }
+   * });
+   * ```
+   *
+   * @param {Object} settings
+   * @param {Object} settings.user_token Token used for user token authentication
+   * @param {Object} settings.auth 2 parameters to login with user authentication
+   * @param {Object} settings.auth.username username parameter used for user authentication
+   * @param {Object} settings.auth.password password parameter used for user authentication
+   * @param {Object} settings.app_token Authorization string provided by the GLPI api configuration
+   * @param {Object} settings.apiurl
+   */
+  constructor(settings = {}) {
+    if (!settings.user_token &amp;&amp;
+       (!settings.auth || (!settings.auth.username || !settings.auth.password))) {
+      throw MissingAuthorizationError();
+    }
+
+    if (!settings.app_token) {
+      throw MissingAppTokenError();
+    }
+
+    if (!settings.apiurl) {
+      throw MissingAPIURLError();
+    }
+
+    this._settings = {
+      user_token : settings.user_token,
+      auth       : this._getAuth(settings.auth),
+      app_token  : settings.app_token,
+      apiurl     : settings.apiurl,
+    };
+    this._session = '';
+
+    console.log(this._settings);
+  }
+
+  _getAuth(auth) {
+    if (auth &amp;&amp; auth.username) {
+      const username = auth.username;
+      const password = auth.password || '';
+      const base64 = new Buffer(`${username}:${password}`).toString('base64');
+      return base64;
+    }
+    return auth;
+  }
+
+  _getRequest(path) {
+    const req = {
+      url     : `${this._settings.apiurl}${path}`,
+      json    : true,
+      headers : {
+        'App-Token'     : this._settings.app_token,
+        'Session-Token' : this._session,
+      }
+    };
+
+    return got.get(req.url, req)
+    .then((res) => {
+      return res.body;
+    });
+  }
+
+  _postRequest(path, body) {
+    const req = {
+      url     : `${this._settings.apiurl}${path}`,
+      json    : true,
+      headers : {
+        'App-Token'     : this._settings.app_token,
+        'Session-Token' : this._session,
+      },
+      body: (body ? Object.assign({}, body) : {})
+    };
+
+    for (let k in req.body) {
+      if (!req.body[k]) delete req.body[k];
+    }
+
+    console.log('post req :',req);
+
+    return got.post(req.url, req)
+    .then((res) => {
+      return res.body;
+    });
+  }
+
+  _queryString(options) {
+    let query = '';
+    Object.keys(options).forEach((key) => {
+      if (typeof options[key] === 'string') {
+        options[key] = (options[key]) ? options[key] : '';
+      } else if (typeof options[key] === 'boolean') {
+        options[key] = (options[key]) ? 1 : 0;
+      }
+    });
+
+    query = qs.stringify(options, { arrayFormat: 'indices',  addQueryPrefix: true });
+
+    console.log('query :', query);
+    return query;
+  }
+
+  _isValidItemType(itemType) {
+    // TODO:
+    return true;
+  }
+
+  initSession() {
+    const req = {
+      url     : `${this._settings.apiurl}/initSession`,
+      json    : true,
+      headers : {
+        'App-Token' : this._settings.app_token,
+      }
+    };
+
+    if (this._settings.user_token) {
+      req.headers.Authorization = `user_token ${this._settings.user_token}`;
+    } else {
+      req.headers.Authorization = `Basic ${this._settings.auth}`;
+    }
+
+    return got.get(req.url, req)
+    .then((res) => {
+      this._session = res.body.session_token;
+      return res.body;
+    });
+  }
+
+  killSession() {
+    const req = {
+      url     : `${this._settings.apiurl}/killSession`,
+      json    : true,
+      headers : {
+        'App-Token'     : this._settings.app_token,
+        'Session-Token' : this._session,
+      }
+    };
+
+    return got.get(req.url, req)
+    .then((res) => {
+      this._session = '';
+      return res.body;
+    });
+  }
+
+  getMyProfiles() {
+    return this._getRequest('/getMyProfiles');
+  }
+
+  getActiveProfile() {
+    return this._getRequest('/getActiveProfile');
+  }
+
+  /**
+   * Change active profile to the profiles_id one.
+   * See getMyProfiles endpoint for possible profiles.
+   * @param {Object} opts
+   * @param {string|integer} opts.profiles_id  (default 'all') ID of the new active profile.
+   */
+  changeActiveProfile(opts) {
+    let options = {
+      profiles_id : 'all',
+    };
+
+    Object.assign(options, opts);
+
+    return this._postRequest('/changeActiveProfile', options);
+  }
+
+  getMyEntities() {
+    return this._getRequest('/getMyEntities');
+  }
+
+  getActiveEntities() {
+    return this._getRequest('/getActiveEntities');
+  }
+
+  getFullSession() {
+    return this._getRequest('/getFullSession');
+  }
+
+  getItem(itemType, id, opts) {
+    let options = {
+      expand_dropdowns  : false,
+      get_hateoas       : true,
+      get_sha1          : false,
+      with_devices      : false,
+      with_disks        : false,
+      with_softwares    : false,
+      with_connections  : false,
+      with_networkports : false,
+      with_infocoms     : false,
+      with_contracts    : false,
+      with_documents    : false,
+      with_tickets      : false,
+      with_problems     : false,
+      with_changes      : false,
+      with_notes        : false,
+      with_logs         : false,
+    };
+
+    Object.assign(options, opts);
+
+    const query = this._queryString(options);
+    let path = `/${itemType}/${id}${query}`;
+
+    console.log('path :', path);
+
+    return this._getRequest(path);
+  }
+
+  getItems(itemType, opts) {
+    let options = {
+      expand_dropdowns  : false,
+      get_hateoas       : true,
+      only_id           : false,
+      range             : '0-50',
+      sort              : 'id',
+      order             : 'DESC',
+      searchText        : '',
+      is_deleted        : false,
+    };
+
+    Object.assign(options, opts);
+
+    const query = this._queryString(options);
+    let path = `/${itemType}${query}`;
+
+    console.log('path :', path);
+
+    return this._getRequest(path);
+  }
+
+  getSubItems(itemType, id, subItemType, opts) {
+    let options = {
+      expand_dropdowns  : false,
+      get_hateoas       : true,
+      only_id           : false,
+      range             : '0-50',
+      sort              : 'id',
+      order             : 'DESC',
+    };
+    let path = '';
+
+    if (_.isPlainObject(itemType)) {
+      opts = subItemType;
+      subItemType = id;
+
+      if (!_.isArray(itemType.links) || typeof subItemType !== 'string') {
+        throw new Error(`No link found for ${subItemType}`);
+      }
+
+      if (!subItemType) {
+        throw new Error('No subItemType specified');
+      }
+
+      const url = new URL(itemType.links.find((e) => e.rel === subItemType).href);
+
+      path = url.href.replace(this._settings.apiurl, '');
+
+    } else {
+      path = `/${itemType}/${id}/${subItemType}`;
+    }
+
+    Object.assign(options, opts);
+
+    path += this._queryString(options);
+
+    console.log('path :', path);
+
+    return this._getRequest(path);
+  }
+
+  getMultipleItems(opts) {
+    let options = {
+      items             : [],
+      expand_dropdowns  : false,
+      get_hateoas       : true,
+      get_sha1          : false,
+      with_devices      : false,
+      with_disks        : false,
+      with_softwares    : false,
+      with_connections  : false,
+      with_networkports : false,
+      with_infocoms     : false,
+      with_contracts    : false,
+      with_documents    : false,
+      with_tickets      : false,
+      with_problems     : false,
+      with_changes      : false,
+      with_notes        : false,
+      with_logs         : false,
+    };
+
+    Object.assign(options, opts);
+
+    const query = this._queryString(options);
+    let path = `/getMultipleItems${query}`;
+
+    console.log('path :', path);
+
+    return this._getRequest(path);
+  }
+
+  listSearchOptions(itemType, opts) {
+    let options = {
+      raw : false,
+    };
+
+    Object.assign(options, opts);
+
+    const query = this._queryString(options);
+    let path = `/listSearchOptions/${itemType}${query}`;
+
+    console.log('path :', path);
+
+    return this._getRequest(path);
+  }
+
+  search(itemType, opts) {
+    let options = {
+      criteria     : [],
+      metacriteria : [],
+      sort         : 'id',
+      order        : 'DESC',
+      range        : '0-50',
+      forcedisplay : [],
+      rawdata      : false,
+      withindexes  : false,
+      uid_cols     : false,
+      giveItems    : false,
+    };
+
+    Object.assign(options, opts);
+
+    const query = this._queryString(options);
+    let path = `/search/${itemType}${query}`;
+
+    console.log('path :', path);
+
+    return this._getRequest(path);
+  }
+
+
+};
+
+module.exports = Glpi;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Feb 28 2018 11:32:46 GMT+0100 (CET) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>
