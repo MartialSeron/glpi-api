@@ -2,7 +2,7 @@ const got = require('got');
 
 const expect = require('chai').expect;
 const Glpi = require('../glpi');
-const config = require('../local');
+const config = require('./config');
 
 
 describe('contructor()', () => {
