@@ -74,15 +74,15 @@ class Glpi {
   constructor(settings = {}) {
     if (!settings.user_token &&
        (!settings.auth || (!settings.auth.username || !settings.auth.password))) {
-      throw MissingAuthorizationError();
+      throw new MissingAuthorizationError();
     }
 
     if (!settings.app_token) {
-      throw MissingAppTokenError();
+      throw new MissingAppTokenError();
     }
 
     if (!settings.apiurl) {
-      throw MissingAPIURLError();
+      throw new MissingAPIURLError();
     }
 
     this._settings = {
