@@ -176,6 +176,7 @@ class Glpi {
   }
 
   initSession() {
+    log('Calling initSession()');
     const req = {
       url     : `${this._settings.apiurl}/initSession`,
       json    : true,
@@ -190,8 +191,11 @@ class Glpi {
       req.headers.Authorization = `Basic ${this._settings.auth}`;
     }
 
+    log(req);
+
     return got.get(req.url, req)
     .then((res) => {
+      log(res);
       this._session = res.body.session_token;
       return res;
     });
