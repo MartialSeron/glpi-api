@@ -126,6 +126,8 @@ class Glpi {
       }
     };
 
+    log('get req :',req);
+
     return got.get(req.url, req);
   }
 
