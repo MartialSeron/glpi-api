@@ -1,9 +1,27 @@
-const got = require('got');
-
 const expect = require('chai').expect;
-const Glpi = require('../glpi');
-const config = require('./config');
 
+const Glpi = require('../glpi');
+const myProfiles = require('./myprofiles.json');
+
+const nock = require('nock');
+
+const genToken = () => Math.random().toString(36).substr(2);
+
+const config = {
+  userToken : {
+    app_token  : 'azertyuiop',
+    apiurl     : 'http://usertoken.glpiapi.test/apirest.php',
+    user_token : 'qsdfghjklm',
+  },
+  basicAuth : {
+    app_token : 'azertyuiop',
+    apiurl     : 'http://basicauth.glpiapi.test/apirest.php',
+    auth      : {
+      username : 'glpi',
+      password : 'glpi',
+    },
+  },
+};
 
 describe('contructor()', () => {
   it('should create a Glpi object with user_token Authorisation method', () => {
@@ -32,104 +50,166 @@ describe('contructor()', () => {
 
 describe('initSession()', () => {
   describe('Token Authorisation method', () => {
-    it('should connect successfully', async () => {
+
+    afterEach(() => {
+      nock.cleanAll();
+    });
+
+    it('should connect successfully', (done) => {
+      nock(config.userToken.apiurl)
+      .matchHeader('app-token', config.userToken.app_token)
+      .matchHeader('authorization', `user_token ${config.userToken.user_token}`)
+      .get('/initSession')
+      .reply(200, { session_token : genToken() });
+
       const glpi = new Glpi(config.userToken);
-      try {
-        const result = await glpi.initSession();
+      glpi.initSession()
+      .then((result) => {
         expect(result).to.have.property('statusCode', 200);
         expect(result).to.have.property('body');
         expect(result.body).to.have.property('session_token');
-      } catch (err) {
-        expect(err).to.not.exist();
-      }
-      await glpi.killSession();
+      })
+      .then(done);
     });
 
-    it('wrong app_token should not connect successfully', async () => {
+    it('wrong app_token should not connect successfully', (done) => {
+
       const fakeConfig = Object.assign({}, config.userToken);
       fakeConfig.app_token = 'boggus';
-      let res;
-      try {
-        const glpi = new Glpi(fakeConfig);
-        res = await glpi.initSession();
-        expect(res).to.not.exist();
-      } catch(err) {
+
+      nock(fakeConfig.apiurl)
+      .matchHeader('app-token', fakeConfig.app_token)
+      .matchHeader('authorization', `user_token ${fakeConfig.user_token}`)
+      .get('/initSession')
+      .reply(400, [
+        'ERROR_APP_TOKEN_PARAMETERS_MISSING',
+        `missing parameter app_token; view documentation in your browser at ${fakeConfig.apiurl}/#ERROR_APP_TOKEN_PARAMETERS_MISSING`
+      ], { statusMessage : 'Bad Request'});
+
+      const glpi = new Glpi(fakeConfig);
+      glpi.initSession()
+      .then((result) => {
+        expect(result).to.not.exist();
+      })
+      .catch((err) => {
         expect(err).to.have.property('statusCode', 400);
         expect(err).to.have.property('statusMessage', 'Bad Request');
-      }
+      })
+      .then(done);
     });
   });
 
   describe('Basic Authorisation method', () => {
-    it('should connect successfully', async () => {
+    afterEach(() => {
+      nock.cleanAll();
+    });
+    it('should connect successfully', (done) => {
+      const base64 = new Buffer(`${config.basicAuth.auth.username}:${config.basicAuth.auth.password}`).toString('base64');
+      nock(config.basicAuth.apiurl)
+      .matchHeader('app-token', config.basicAuth.app_token)
+      .matchHeader('authorization', `Basic ${base64}`)
+      .get('/initSession')
+      .reply(200, { session_token : genToken() });
+
       const glpi = new Glpi(config.basicAuth);
-      let result;
-      try {
-        result = await glpi.initSession();
+      glpi.initSession()
+      .then((result) => {
         expect(result).to.have.property('statusCode', 200);
         expect(result).to.have.property('body');
         expect(result.body).to.have.property('session_token');
-      } catch (err) {
+      })
+      .catch((err) => {
         expect(err).to.not.exist();
-      }
-      await glpi.killSession();
+      })
+      .then(done);
     });
 
-    it('wrong password should not connect successfully', async () => {
+    it('wrong password should not connect successfully', (done) => {
       const fakeConfig = Object.assign({}, config.basicAuth);
       fakeConfig.auth.password = 'boggus';
-      let res;
-      try {
-        const glpi = new Glpi(fakeConfig);
-        res = await glpi.initSession();
-        expect(res).to.not.exist();
-      } catch(err) {
+
+      const base64 = new Buffer(`${fakeConfig.auth.username}:${fakeConfig.auth.password}`).toString('base64');
+      nock(fakeConfig.apiurl)
+      .matchHeader('app-token', fakeConfig.app_token)
+      .matchHeader('authorization', `Basic ${base64}`)
+      .get('/initSession')
+      .reply(401, {}, { statusMessage : 'Unauthorized' });
+
+      const glpi = new Glpi(fakeConfig);
+      glpi.initSession()
+      .then((result) => {
+        expect(result).to.not.exist();
+      })
+      .catch((err) => {
         expect(err).to.have.property('statusCode', 401);
         expect(err).to.have.property('statusMessage', 'Unauthorized');
-      }
+      })
+      .then(done);
     });
-  });
-})
-
-describe('killSession()', () => {
-  it('should log out successfully', async () => {
-    const glpi = new Glpi(config.userToken);
-    try {
-      await glpi.initSession();
-      const result = await glpi.killSession();
-      expect(result).to.have.property('statusCode', 200);
-    } catch (err) {
-      expect(err).to.not.exist();
-    }
-  });
-
-  it('should clear session property after successful log out', async () => {
-    const glpi = new Glpi(config.userToken);
-    try {
-      await glpi.initSession();
-      const result = await glpi.killSession();
-      expect(glpi._session).to.be.equal('');
-    } catch (err) {
-      expect(err).to.not.exist();
-    }
   });
 });
 
-describe('Basic GET methods', () => {
+describe('Authenticated GET methods', () => {
   const glpi = new Glpi(config.userToken);
-  before( async () => await glpi.initSession());
-  after( async () => await glpi.killSession());
+  let sessionToken = genToken();
+  beforeEach(async () => {
+    nock(config.userToken.apiurl)
+    .matchHeader('app-token', config.userToken.app_token)
+    .matchHeader('authorization', `user_token ${config.userToken.user_token}`)
+    .get('/initSession')
+    .reply(200, { session_token : sessionToken });
+
+    await glpi.initSession()
+    .then(() => nock.cleanAll());
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    sessionToken = genToken();
+  });
+
+  describe('killSession()', () => {
+    it('should log out successfully', (done) => {
+      nock(config.userToken.apiurl)
+      .matchHeader('app-token', config.userToken.app_token)
+      .matchHeader('session-token', sessionToken)
+      .get('/killSession')
+      .reply(200, { });
+
+      glpi.killSession()
+      .then((result) => {
+        expect(result).to.have.property('statusCode', 200);
+        expect(glpi._session).to.be.equal('');
+      })
+      .catch((err) => {
+        expect(err).to.not.exist();
+      })
+      .then(done);
+    });
+  });
 
   describe('getMyProfiles()', () => {
-    it('should fetch my profiles', async () => {
-      const result = await glpi.getMyProfiles();
-      expect(result).to.have.property('statusCode', 200);
-      expect(result).to.have.property('body');
-      expect(result.body).to.have.property('myprofiles');
-      expect(result.body.myprofiles).to.be.an('array');
-      const sa = result.body.myprofiles.find(p => p.name === 'Super-Admin');
-      expect(sa).to.be.an('object');
-      expect(sa).to.have.property('id', 4);
+    it('should fetch my profiles', (done) => {
+      nock(config.userToken.apiurl)
+      .matchHeader('app-token', config.userToken.app_token)
+      .matchHeader('session-token', sessionToken)
+      .get('/getMyProfiles')
+      .reply(200, myProfiles);
+
+      glpi.getMyProfiles()
+      .then((result) => {
+        expect(result).to.have.property('statusCode', 200);
+        expect(result).to.have.property('body');
+        expect(result.body).to.have.property('myprofiles');
+        expect(result.body.myprofiles).to.be.an('array');
+        const sa = result.body.myprofiles.find(p => p.name === 'Super-Admin');
+        expect(sa).to.be.an('object');
+        expect(sa).to.have.property('id', 4);
+      })
+      .catch((err) => {
+        expect(err).to.not.exist();
+      })
+      .then(done);
     });
   });
 });
