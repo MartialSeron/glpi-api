@@ -1,9 +1,12 @@
 const expect = require('chai').expect;
-
-const Glpi = require('../glpi');
-const myProfiles = require('./myprofiles.json');
-
 const nock = require('nock');
+const Glpi = require('../glpi');
+
+const myProfiles = require('./myprofiles.json');
+const activeProfile = require('./activeprofile.json');
+const myEntities = require('./myentities.json');
+const activeEntity = require('./activeentity.json');
+const fullSession = require('./fullsession.json');
 
 const genToken = () => Math.random().toString(36).substr(2);
 
@@ -152,14 +155,14 @@ describe('initSession()', () => {
 describe('Authenticated GET methods', () => {
   const glpi = new Glpi(config.userToken);
   let sessionToken = genToken();
-  beforeEach(async () => {
+  beforeEach(() => {
     nock(config.userToken.apiurl)
     .matchHeader('app-token', config.userToken.app_token)
     .matchHeader('authorization', `user_token ${config.userToken.user_token}`)
     .get('/initSession')
     .reply(200, { session_token : sessionToken });
 
-    await glpi.initSession()
+    return glpi.initSession()
     .then(() => nock.cleanAll());
   });
 
@@ -169,47 +172,92 @@ describe('Authenticated GET methods', () => {
   });
 
   describe('killSession()', () => {
-    it('should log out successfully', (done) => {
+    it('should log out successfully', async () => {
       nock(config.userToken.apiurl)
       .matchHeader('app-token', config.userToken.app_token)
       .matchHeader('session-token', sessionToken)
       .get('/killSession')
-      .reply(200, { });
+      .reply(200, {});
 
-      glpi.killSession()
-      .then((result) => {
-        expect(result).to.have.property('statusCode', 200);
-        expect(glpi._session).to.be.equal('');
-      })
-      .catch((err) => {
-        expect(err).to.not.exist();
-      })
-      .then(done);
+      const result = await glpi.killSession();
+      expect(result).to.have.property('statusCode', 200);
+      expect(glpi._session).to.be.equal('');
     });
   });
 
   describe('getMyProfiles()', () => {
-    it('should fetch my profiles', (done) => {
+    it('should fetch my profiles', async () => {
       nock(config.userToken.apiurl)
       .matchHeader('app-token', config.userToken.app_token)
       .matchHeader('session-token', sessionToken)
       .get('/getMyProfiles')
       .reply(200, myProfiles);
 
-      glpi.getMyProfiles()
-      .then((result) => {
-        expect(result).to.have.property('statusCode', 200);
-        expect(result).to.have.property('body');
-        expect(result.body).to.have.property('myprofiles');
-        expect(result.body.myprofiles).to.be.an('array');
-        const sa = result.body.myprofiles.find(p => p.name === 'Super-Admin');
-        expect(sa).to.be.an('object');
-        expect(sa).to.have.property('id', 4);
-      })
-      .catch((err) => {
-        expect(err).to.not.exist();
-      })
-      .then(done);
+      const result = await glpi.getMyProfiles()
+      expect(result).to.have.property('statusCode', 200);
+      expect(result).to.have.nested.property('body.myprofiles');
+      expect(result.body.myprofiles).to.be.an('array');
+      const profile = result.body.myprofiles.find(p => p.name === 'Super-Admin');
+      expect(profile).to.be.an('object');
+      expect(profile).to.have.property('id', 4);
+    });
+  });
+
+  describe('getActiveProfile()', () => {
+    it('should return my active profile', async () => {
+      nock(config.userToken.apiurl)
+      .matchHeader('app-token', config.userToken.app_token)
+      .matchHeader('session-token', sessionToken)
+      .get('/getActiveProfile')
+      .reply(200, activeProfile);
+
+      const result = await glpi.getActiveProfile();
+      expect(result).to.have.property('statusCode', 200);
+      expect(result).to.have.nested.property('body.active_profile.id', 4);
+    });
+  });
+
+  describe('getMyEntities()', () => {
+    it('should return my entities', async () => {
+      nock(config.userToken.apiurl)
+      .matchHeader('app-token', config.userToken.app_token)
+      .matchHeader('session-token', sessionToken)
+      .get('/getMyEntities')
+      .reply(200, myEntities);
+
+      const result = await glpi.getMyEntities();
+      expect(result).to.have.property('statusCode', 200);
+      expect(result).to.have.nested.property('body.myentities[0].id', 0);
+      expect(result).to.have.nested.property('body.myentities[0].name', 'Entité racine');
+    });
+  });
+
+  describe('getActiveEntities()', () => {
+    it('should return current active entities', async () => {
+      nock(config.userToken.apiurl)
+      .matchHeader('app-token', config.userToken.app_token)
+      .matchHeader('session-token', sessionToken)
+      .get('/getActiveEntities')
+      .reply(200, activeEntity);
+
+      const result = await glpi.getActiveEntities();
+      expect(result).to.have.property('statusCode', 200);
+      expect(result).to.have.nested.property('body.active_entity.id', 0);
+      expect(result).to.have.nested.property('body.active_entity.active_entity_recursive', 1);
+    });
+  });
+
+  describe('getFullSession()', () => {
+    it('should return the current full session', async () => {
+      nock(config.userToken.apiurl)
+      .matchHeader('app-token', config.userToken.app_token)
+      .matchHeader('session-token', sessionToken)
+      .get('/getFullSession')
+      .reply(200, fullSession);
+
+      const result = await glpi.getFullSession();
+      expect(result).to.have.property('statusCode', 200);
+      expect(result).to.have.nested.property('body.session.glpiname', 'glpi');
     });
   });
 });
