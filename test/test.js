@@ -1,5 +1,6 @@
 const expect = require('chai').expect;
 const nock = require('nock');
+const _ = require('lodash');
 const Glpi = require('../glpi');
 
 const myProfiles = require('./myprofiles.json');
@@ -7,6 +8,11 @@ const activeProfile = require('./activeprofile.json');
 const myEntities = require('./myentities.json');
 const activeEntity = require('./activeentity.json');
 const fullSession = require('./fullsession.json');
+const itemTicketDefault = require('./ticket_default.json');
+const itemTicketExpandedDropdowns = require('./ticket_expanded_dropdowns.json');
+const itemTicketWithoutHateoas = require('./ticket_without_hateoas.json');
+const itemComputerDefault = require('./computer_default.json');
+const itemComputerWithDevices = require('./computer_with_devices.json');
 
 const genToken = () => Math.random().toString(36).substr(2);
 
@@ -260,4 +266,209 @@ describe('Authenticated GET methods', () => {
       expect(result).to.have.nested.property('body.session.glpiname', 'glpi');
     });
   });
+
+  describe('getItem()', () => {
+    it('should return the expected ticket with default options', async () => {
+      const requestedTicketId = 123456;
+      nock(config.userToken.apiurl)
+      .matchHeader('app-token', config.userToken.app_token)
+      .matchHeader('session-token', sessionToken)
+      .get(`/Ticket/${requestedTicketId}`)
+      .query({
+        expand_dropdowns  : 0,
+        get_hateoas       : 1,
+        get_sha1          : 0,
+        with_devices      : 0,
+        with_disks        : 0,
+        with_softwares    : 0,
+        with_connections  : 0,
+        with_networkports : 0,
+        with_infocoms     : 0,
+        with_contracts    : 0,
+        with_documents    : 0,
+        with_tickets      : 0,
+        with_problems     : 0,
+        with_changes      : 0,
+        with_notes        : 0,
+        with_logs         : 0,
+      })
+      .reply(200, itemTicketDefault);
+
+      const result = await glpi.getItem('Ticket', requestedTicketId);
+      expect(result).to.have.property('statusCode', 200);
+      expect(result).to.have.nested.property('body.id', requestedTicketId);
+      expect(result).to.have.nested.property('body.links[0].rel', 'Entity');
+      expect(result).to.have.nested.property('body.links[0].href', `${config.userToken.apiurl}/Entity/3`);
+    });
+
+    it('should return the expected ticket with expanded dropdowns', async () => {
+      const requestedTicketId = 123456;
+      nock(config.userToken.apiurl)
+      .matchHeader('app-token', config.userToken.app_token)
+      .matchHeader('session-token', sessionToken)
+      .get(`/Ticket/${requestedTicketId}`)
+      .query({
+        expand_dropdowns  : 1,
+        get_hateoas       : 1,
+        get_sha1          : 0,
+        with_devices      : 0,
+        with_disks        : 0,
+        with_softwares    : 0,
+        with_connections  : 0,
+        with_networkports : 0,
+        with_infocoms     : 0,
+        with_contracts    : 0,
+        with_documents    : 0,
+        with_tickets      : 0,
+        with_problems     : 0,
+        with_changes      : 0,
+        with_notes        : 0,
+        with_logs         : 0,
+      })
+      .reply(200, itemTicketExpandedDropdowns);
+
+      const result = await glpi.getItem('Ticket', requestedTicketId, { expand_dropdowns : true });
+      expect(result).to.have.property('statusCode', 200);
+      expect(result).to.have.nested.property('body.id', requestedTicketId);
+      expect(result).to.have.nested.property('body.itilcategories_id', 'Test Category');
+      expect(result).to.have.nested.property('body.requesttypes_id', 'Phone');
+      expect(result).to.have.nested.property('body.users_id_lastupdater', 'glpi');
+      expect(result).to.have.nested.property('body.users_id_recipient', 'glpi');
+      expect(result).to.have.nested.property('body.entities_id', 'Root entity > Test Entity');
+    });
+
+    it('should return the expected ticket without HATEOAS', async () => {
+      const requestedTicketId = 123456;
+      nock(config.userToken.apiurl)
+      .matchHeader('app-token', config.userToken.app_token)
+      .matchHeader('session-token', sessionToken)
+      .get(`/Ticket/${requestedTicketId}`)
+      .query({
+        expand_dropdowns  : 0,
+        get_hateoas       : 0,
+        get_sha1          : 0,
+        with_devices      : 0,
+        with_disks        : 0,
+        with_softwares    : 0,
+        with_connections  : 0,
+        with_networkports : 0,
+        with_infocoms     : 0,
+        with_contracts    : 0,
+        with_documents    : 0,
+        with_tickets      : 0,
+        with_problems     : 0,
+        with_changes      : 0,
+        with_notes        : 0,
+        with_logs         : 0,
+      })
+      .reply(200, itemTicketWithoutHateoas);
+
+      const result = await glpi.getItem('Ticket', requestedTicketId, { get_hateoas : false });
+      expect(result).to.have.property('statusCode', 200);
+      expect(result).to.have.nested.property('body.id', requestedTicketId);
+      expect(result).to.not.have.nested.property('body.links');
+    });
+
+    it('should return the SHA1 of the expected ticket', async () => {
+      const requestedTicketId = 123456;
+      const expectedSha1 = '8ac3900bbcc7752b22500ead42789f6f1f757c7d';
+      nock(config.userToken.apiurl)
+      .matchHeader('app-token', config.userToken.app_token)
+      .matchHeader('session-token', sessionToken)
+      .get(`/Ticket/${requestedTicketId}`)
+      .query({
+        expand_dropdowns  : 0,
+        get_hateoas       : 1,
+        get_sha1          : 1,
+        with_devices      : 0,
+        with_disks        : 0,
+        with_softwares    : 0,
+        with_connections  : 0,
+        with_networkports : 0,
+        with_infocoms     : 0,
+        with_contracts    : 0,
+        with_documents    : 0,
+        with_tickets      : 0,
+        with_problems     : 0,
+        with_changes      : 0,
+        with_notes        : 0,
+        with_logs         : 0,
+      })
+      .reply(200, `"${expectedSha1}"` );
+
+      const result = await glpi.getItem('Ticket', requestedTicketId, { get_sha1 : true });
+
+      expect(result).to.have.property('statusCode', 200);
+      expect(result).to.have.property('body', expectedSha1);
+    });
+
+    it('should return the expected computer', async () => {
+      const requestedComputerId = 11640;
+      nock(config.userToken.apiurl)
+      .matchHeader('app-token', config.userToken.app_token)
+      .matchHeader('session-token', sessionToken)
+      .get(`/Computer/${requestedComputerId}`)
+      .query({
+        expand_dropdowns  : 0,
+        get_hateoas       : 1,
+        get_sha1          : 0,
+        with_devices      : 0,
+        with_disks        : 0,
+        with_softwares    : 0,
+        with_connections  : 0,
+        with_networkports : 0,
+        with_infocoms     : 0,
+        with_contracts    : 0,
+        with_documents    : 0,
+        with_tickets      : 0,
+        with_problems     : 0,
+        with_changes      : 0,
+        with_notes        : 0,
+        with_logs         : 0,
+      })
+      .reply(200, itemComputerDefault);
+
+      const result = await glpi.getItem('Computer', requestedComputerId);
+
+      expect(result).to.have.property('statusCode', 200);
+      expect(result).to.have.nested.property('body.id', requestedComputerId);
+    });
+
+    it('should return the expected computer with its devices', async () => {
+      const requestedComputerId = 11640;
+      nock(config.userToken.apiurl)
+      .matchHeader('app-token', config.userToken.app_token)
+      .matchHeader('session-token', sessionToken)
+      .get(`/Computer/${requestedComputerId}`)
+      .query({
+        expand_dropdowns  : 0,
+        get_hateoas       : 1,
+        get_sha1          : 0,
+        with_devices      : 1,
+        with_disks        : 0,
+        with_softwares    : 0,
+        with_connections  : 0,
+        with_networkports : 0,
+        with_infocoms     : 0,
+        with_contracts    : 0,
+        with_documents    : 0,
+        with_tickets      : 0,
+        with_problems     : 0,
+        with_changes      : 0,
+        with_notes        : 0,
+        with_logs         : 0,
+      })
+      .reply(200, itemComputerWithDevices);
+
+      const result = await glpi.getItem('Computer', requestedComputerId, { with_devices : true });
+
+      expect(result).to.have.property('statusCode', 200);
+      expect(result).to.have.nested.property('body.id', requestedComputerId);
+      expect(result).to.have.nested.property('body._devices.Item_DeviceProcessor.148471.id', 148471);
+      expect(result).to.have.nested.property('body._devices.Item_DeviceProcessor.148472.id', 148472);
+      expect(result).to.have.nested.property('body._devices.Item_DeviceMemory.205209.id', 205209);
+      expect(result).to.have.nested.property('body._devices.Item_DeviceMemory.205210.id', 205210);
+    });
+  });
+
 });
