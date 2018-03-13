@@ -1,5 +1,4 @@
 const GLPI = require('./glpi');
-const url = require('url');
 
 const settings = {
   app_token  : '04axspmuyojwgxa8cqlzq9bg4osdsliy8vq14th4',
@@ -17,11 +16,13 @@ glpi.initSession()
 .then((res) => {
   return glpi.getActiveProfile();
 })
-.then((profile) => {
+.then((res) => {
+  const profile = res.body;
   console.log('profile :', profile.active_profile.name);
   return glpi.getMyProfiles();
 })
-.then((profiles) => {
+.then((res) => {
+  const profiles = res.body;
   console.log('profiles :', profiles);
   const choice = profiles.myprofiles.find((e) => e.name === 'Back Office');
 
@@ -32,8 +33,14 @@ glpi.initSession()
   console.log('res :', res);
   return glpi.getActiveProfile();
 })
-.then((profile) => {
+.then((res) => {
+  const profile = res.body;
   console.log('profile :', profile.active_profile.name);
+  return glpi.getItem('Ticket', 123456, { get_sha1 : true } );
+})
+.then((res) => {
+  const ticket = res.body;
+  console.log('ticket :', ticket);
 })
 .catch((err) => {
   console.log(err);
