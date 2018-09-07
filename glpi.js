@@ -7,34 +7,72 @@ const debug = require('debug');
 const log = debug('glpi-api');
 
 class MissingAuthorizationError extends Error {
-  constructor(message, extra) {
+  constructor(message) {
     super();
     Error.captureStackTrace(this, this.constructor);
     this.name = 'MissingAuthorizationError';
-    this.message = message || 'Missing Authorization header';
-    if (extra) this.extra = extra;
+    this.message = message;
   }
 }
 
 class MissingAppTokenError extends Error {
-  constructor(message, extra) {
+  constructor(message) {
     super();
     Error.captureStackTrace(this, this.constructor);
     this.name = 'MissingAppTokenError';
-    this.message = message || 'Missing App-Token header';
-    if (extra) this.extra = extra;
+    this.message = message;
   }
 }
 
 class MissingAPIURLError extends Error {
-  constructor(message, extra) {
+  constructor(message) {
     super();
     Error.captureStackTrace(this, this.constructor);
     this.name = 'MissingAPIURLError';
-    this.message = message || 'Missing API URL header';
-    if (extra) this.extra = extra;
+    this.message = message;
   }
 }
+
+class MissingHATEOASError extends Error {
+  constructor(message) {
+    super();
+    Error.captureStackTrace(this, this.constructor);
+    this.name = 'MissingHATEOASError';
+    this.message = message;
+  }
+}
+
+class MissingItemTypeError extends Error {
+  constructor(message) {
+    super();
+    Error.captureStackTrace(this, this.constructor);
+    this.name = 'MissingItemTypeError';
+    this.message = message;
+  }
+}
+
+class InvalidItemTypeError extends Error {
+  constructor(message) {
+    super();
+    Error.captureStackTrace(this, this.constructor);
+    this.name = 'InvalidItemTypeError';
+    this.message = message;
+  }
+}
+
+class InvalidParameterError extends Error {
+  constructor(message) {
+    super();
+    Error.captureStackTrace(this, this.constructor);
+    this.name = 'InvalidParameterError';
+    this.message = message;
+  }
+}
+
+const HTTP_GET = 'get';
+const HTTP_POST = 'post';
+const HTTP_PUT = 'put';
+const HTTP_DELETE = 'delete';
 
 /** Class to manage access to GLPI via REST API */
 class Glpi {
@@ -74,15 +112,15 @@ class Glpi {
   constructor(settings = {}) {
     if (!settings.user_token &&
        (!settings.auth || (!settings.auth.username || !settings.auth.password))) {
-      throw new MissingAuthorizationError();
+      throw new MissingAuthorizationError('Missing Authorization header');
     }
 
     if (!settings.app_token) {
-      throw new MissingAppTokenError();
+      throw new MissingAppTokenError('Missing App-Token header');
     }
 
     if (!settings.apiurl) {
-      throw new MissingAPIURLError();
+      throw new MissingAPIURLError('Missing API URL header');
     }
 
     this._settings = {
@@ -105,7 +143,7 @@ class Glpi {
   _getAuth(auth) {
     if (auth && auth.username) {
       const username = auth.username;
-      const password = auth.password || '';
+      const password = auth.password;
       const base64 = new Buffer(`${username}:${password}`).toString('base64');
       return base64;
     }
@@ -116,148 +154,154 @@ class Glpi {
    * Call a GET HTTP request and return response body
    * @param {string} path path of the request
    */
-  _getRequest(path) {
+  _request(method, endpoint, options) {
     const req = {
-      url     : `${this._settings.apiurl}${path}`,
-      json    : true,
-      headers : {
-        'App-Token'     : this._settings.app_token,
-        'Session-Token' : this._session,
-      }
-    };
-
-    log('get req :',req);
-
-    return got.get(req.url, req);
-  }
-
-
-  /**
-   * Call a POST HTTP request
-   * @param {string} path path of the request
-   */
-  _postRequest(path, body) {
-    const req = {
-      url     : `${this._settings.apiurl}${path}`,
+      baseUrl : this._settings.apiurl,
       json    : true,
       headers : {
         'App-Token'     : this._settings.app_token,
         'Session-Token' : this._session,
       },
-      body: (body ? Object.assign({}, body) : {}),
+      method,
+      port: 80,
+      protocol: 'http:',
     };
 
-    for (let k in req.body) {
-      if (!req.body[k]) delete req.body[k];
+    if (options && options.body) {
+      req.body = Object.assign({}, options.body);
+      for (let k in req.body) {
+        if (!req.body[k]) delete req.body[k];
+      }
     }
 
-    log('post req :',req);
+    if (options && options.query) {
+      req.query = qs.stringify(options.query, { arrayFormat: 'indices',  addQueryPrefix: false });
+    }
 
-    return got.post(req.url, req);
-  }
+    if (options && options.headers) {
+      req.headers = Object.assign({}, req.headers, options.headers) ;
+    }
 
-  _queryString(options) {
-    let query = '';
-    Object.keys(options).forEach((key) => {
-      if (typeof options[key] === 'string') {
-        options[key] = (options[key]) ? options[key] : '';
-      } else if (typeof options[key] === 'boolean') {
-        options[key] = (options[key]) ? 1 : 0;
-      }
+    log('> METHOD :',method);
+    log('> ENDPOINT :',endpoint);
+    log('> REQUEST :',req);
+
+    return got(`${this._settings.apiurl}${endpoint}`, req)
+    .then((res) => {
+      // log('> RESPONSE :', res);
+      return res;
     });
 
-    query = qs.stringify(options, { arrayFormat: 'indices',  addQueryPrefix: true });
-
-    log('query :', query);
-    return query;
   }
 
-  _isValidItemType(itemType) {
-    // TODO:
+  // _queryString(options) {
+  //   let query = '';
+  //   Object.keys(options).forEach((key) => {
+  //     if (typeof options[key] === 'string') {
+  //       options[key] = (options[key]) ? options[key] : '';
+  //     } else if (typeof options[key] === 'boolean') {
+  //       options[key] = (options[key]) ? 1 : 0;
+  //     }
+  //   });
+
+  //   query = qs.stringify(options, { arrayFormat: 'indices',  addQueryPrefix: true });
+
+  //   log('query :', query);
+  //   return query;
+  // }
+
+  _validateItemType(itemType) {
+    const itemTypes = require('./itemTypes.json');
+    if (!itemType) {
+      throw new MissingItemTypeError('Missing item type');
+    }
+
+    if (itemTypes.indexOf(itemType)===-1) {
+      throw new InvalidItemTypeError('Invalid item type');
+    }
     return true;
   }
 
   initSession() {
     log('Calling initSession()');
-    const req = {
-      url     : `${this._settings.apiurl}/initSession`,
-      json    : true,
-      headers : {
-        'App-Token' : this._settings.app_token,
-      }
+    const headers = {
+      'App-Token' : this._settings.app_token,
     };
-
     if (this._settings.user_token) {
-      req.headers.Authorization = `user_token ${this._settings.user_token}`;
+      headers.Authorization = `user_token ${this._settings.user_token}`;
     } else {
-      req.headers.Authorization = `Basic ${this._settings.auth}`;
+      headers.Authorization = `Basic ${this._settings.auth}`;
     }
-
-    log(req);
-
-    return got.get(req.url, req)
+    return this._request(HTTP_GET, '/initSession', { headers })
     .then((res) => {
-      log(res);
       this._session = res.body.session_token;
       return res;
     });
   }
 
   killSession() {
-    const req = {
-      url     : `${this._settings.apiurl}/killSession`,
-      json    : true,
-      headers : {
-        'App-Token'     : this._settings.app_token,
-        'Session-Token' : this._session,
-      }
-    };
-
-    return got.get(req.url, req)
+    log('Calling killSession()');
+    return this._request(HTTP_GET, '/killSession')
     .then((res) => {
       this._session = '';
       return res;
     });
   }
 
+  lostPassword(email, password_forget_token, password) {
+    log('Calling lostPassword()');
+    const body = {
+      email,
+      password_forget_token,
+      password,
+    };
+    return this._request(HTTP_PUT, '/lostPassword', { body });
+  }
+
   getMyProfiles() {
-    return this._getRequest('/getMyProfiles');
+    return this._request(HTTP_GET, '/getMyProfiles');
   }
 
   getActiveProfile() {
-    return this._getRequest('/getActiveProfile');
+    return this._request(HTTP_GET, '/getActiveProfile');
   }
 
   /**
    * Change active profile to the profiles_id one.
    * See getMyProfiles endpoint for possible profiles.
-   * @param {Object} opts
-   * @param {string|integer} opts.profiles_id  (default 'all') ID of the new active profile.
+   * @param {integer} profiles_id  ID of the new active profile.
    */
-  changeActiveProfile(opts) {
-    let options = {
-      profiles_id : 'all',
-    };
-
-    Object.assign(options, opts);
-
-    return this._postRequest('/changeActiveProfile', options);
+  changeActiveProfile(profiles_id) {
+    const body = { profiles_id };
+    return this._request(HTTP_POST, '/changeActiveProfile', { body });
   }
 
   getMyEntities() {
-    return this._getRequest('/getMyEntities');
+    return this._request(HTTP_GET, '/getMyEntities');
   }
 
   getActiveEntities() {
-    return this._getRequest('/getActiveEntities');
+    return this._request(HTTP_GET, '/getActiveEntities');
+  }
+
+  /**
+   * Change active profile to the profiles_id one.
+   * See getMyProfiles endpoint for possible profiles.
+   * @param {integer} profiles_id  ID of the new active profile.
+   */
+  changeActiveEntities(entities_id, is_recursive = 'false') {
+    const body = { entities_id, is_recursive };
+    return this._request(HTTP_POST, '/changeActiveEntities', { body });
   }
 
   getFullSession() {
-    return this._getRequest('/getFullSession');
+    return this._request(HTTP_GET, '/getFullSession');
   }
 
-  getItem(itemType, id, opts) {
-    let options = {
+  getItem(itemType, id, opts = {}) {
+    this._validateItemType(itemType);
+
+    const options = {
       expand_dropdowns  : false,
       get_hateoas       : true,
       get_sha1          : false,
@@ -276,18 +320,16 @@ class Glpi {
       with_logs         : false,
     };
 
-    Object.assign(options, opts);
+    const query = Object.assign({}, options, opts);
+    const endpoint = `/${itemType}/${id}`;
 
-    const query = this._queryString(options);
-    let path = `/${itemType}/${id}${query}`;
-
-    log('path :', path);
-
-    return this._getRequest(path);
+    return this._request(HTTP_GET, endpoint, { query });
   }
 
-  getItems(itemType, opts) {
-    let options = {
+  getItems(itemType, opts = {}) {
+    this._validateItemType(itemType);
+
+    const options = {
       expand_dropdowns  : false,
       get_hateoas       : true,
       only_id           : false,
@@ -298,18 +340,15 @@ class Glpi {
       is_deleted        : false,
     };
 
-    Object.assign(options, opts);
+    const query = Object.assign({}, options, opts);
+    const endpoint = `/${itemType}`;
 
-    const query = this._queryString(options);
-    let path = `/${itemType}${query}`;
-
-    log('path :', path);
-
-    return this._getRequest(path);
+    return this._request(HTTP_GET, endpoint, { query });
   }
 
-  getSubItems(itemType, id, subItemType, opts) {
-    let options = {
+  getSubItems(itemType, id, subItemType, opts = {}) {
+
+    const options = {
       expand_dropdowns  : false,
       get_hateoas       : true,
       only_id           : false,
@@ -317,39 +356,47 @@ class Glpi {
       sort              : 'id',
       order             : 'DESC',
     };
-    let path = '';
+
+    let endpoint;
 
     if (_.isPlainObject(itemType)) {
+      const item = itemType;
       opts = subItemType;
       subItemType = id;
 
-      if (!_.isArray(itemType.links) || typeof subItemType !== 'string') {
-        throw new Error(`No link found for ${subItemType}`);
+      if (!item.links || !_.isArray(item.links)) {
+        throw new MissingHATEOASError('Missing HATEOAS on provided object');
+      }
+      this._validateItemType(subItemType);
+
+      const link = item.links.find((e) => e.rel === subItemType);
+
+      if (!link) {
+        throw new MissingHATEOASError(`Missing link for '${subItemType}' on provided object`);
       }
 
-      if (!subItemType) {
-        throw new Error('No subItemType specified');
+      const url = new URL(link.href);
+
+      endpoint = url.href.replace(this._settings.apiurl, '');
+      if (endpoint[endpoint.length - 1] === '/') {
+        endpoint = endpoint.slice(0, -1);
       }
 
-      const url = new URL(itemType.links.find((e) => e.rel === subItemType).href);
+    }
+    else {
+      this._validateItemType(itemType);
+      this._validateItemType(subItemType);
 
-      path = url.href.replace(this._settings.apiurl, '');
-
-    } else {
-      path = `/${itemType}/${id}/${subItemType}`;
+      endpoint = `/${itemType}/${id}/${subItemType}`;
     }
 
-    Object.assign(options, opts);
+    const query = Object.assign({}, options, opts);
 
-    path += this._queryString(options);
-
-    log('path :', path);
-
-    return this._getRequest(path);
+    return this._request(HTTP_GET, endpoint, { query });
   }
 
-  getMultipleItems(opts) {
-    let options = {
+  getMultipleItems(opts = {}) {
+    const options = {
       items             : [],
       expand_dropdowns  : false,
       get_hateoas       : true,
@@ -369,38 +416,34 @@ class Glpi {
       with_logs         : false,
     };
 
-    Object.assign(options, opts);
+    const query = Object.assign({}, options, opts);
 
-    const query = this._queryString(options);
-    let path = `/getMultipleItems${query}`;
-
-    log('path :', path);
-
-    return this._getRequest(path);
+    if(opts.items) {
+      query.items = JSON.parse(JSON.stringify(opts.items));
+    } else {
+      throw new InvalidParameterError('Invalid parameter');
+    }
+    return this._request(HTTP_GET, '/getMultipleItems', { query });
   }
 
-  listSearchOptions(itemType, opts) {
-    let options = {
-      raw : false,
-    };
+  listSearchOptions(itemType, raw = false) {
+    this._validateItemType(itemType);
 
-    Object.assign(options, opts);
+    const query = (raw) ? { raw : true } : undefined;
+    const endpoint = `/listSearchOptions/${itemType}`;
 
-    const query = this._queryString(options);
-    let path = `/listSearchOptions/${itemType}${query}`;
-
-    log('path :', path);
-
-    return this._getRequest(path);
+    return this._request(HTTP_GET, endpoint, { query });
   }
 
-  search(itemType, opts) {
-    let options = {
+  search(itemType, opts = {}) {
+    this._validateItemType(itemType);
+
+    const options = {
       criteria     : [],
       metacriteria : [],
       sort         : 'id',
       order        : 'DESC',
-      range        : '0-50',
+      // range        : '0-50',
       forcedisplay : [],
       rawdata      : false,
       withindexes  : false,
@@ -408,14 +451,84 @@ class Glpi {
       giveItems    : false,
     };
 
-    Object.assign(options, opts);
+    const query = Object.assign({}, options, opts);
+    const endpoint = `/search/${itemType}`;
 
-    const query = this._queryString(options);
-    let path = `/search/${itemType}${query}`;
+    return this._request(HTTP_GET, endpoint, { query });
+  }
 
-    log('path :', path);
+  addItems(itemType, input = {}) {
+    this._validateItemType(itemType);
 
-    return this._getRequest(path);
+    if (!input || _.isEmpty(input)) {
+      throw new InvalidParameterError('Invalid parameter');
+    }
+
+    const body = { input };
+
+    return this._request(HTTP_POST, `/${itemType}`, { body });
+  }
+
+  updateItems(itemType, id, input = {}) {
+    this._validateItemType(itemType);
+    if ((!input || _.isEmpty(input)) && (_.isPlainObject(id) || _.isArray(id))) {
+      input = id;
+      id = undefined;
+    }
+
+    if (!input || _.isEmpty(input) || (!id && !input.id && !input.length) || (id && input.length)) {
+      throw new InvalidParameterError('Invalid parameter');
+    }
+
+    if (input.length) {
+      const invalidArray = input.some(item => !item.id);
+      if (invalidArray) {
+        throw new InvalidParameterError('Invalid parameter');
+      }
+    }
+
+    let endpoint = `/${itemType}`;
+    if (id) {
+      endpoint += `/${id}`;
+    }
+
+    const body = { input };
+
+    return this._request(HTTP_PUT, endpoint, { body });
+
+  }
+
+  deleteItems(itemType, id, input = {}, opts = {}) {
+    this._validateItemType(itemType);
+    if (_.isPlainObject(id) || _.isArray(id)) {
+      opts = input;
+      input = id;
+      id = undefined;
+    }
+
+    if ((!id && !input.id && !input.length) || (id && input.length)) {
+      throw new InvalidParameterError('Invalid parameter');
+    }
+
+    if (input.length) {
+      const invalidArray = input.some(item => !item.id);
+      if (invalidArray) {
+        throw new InvalidParameterError('Invalid parameter');
+      }
+    }
+
+    const options = {
+      force_purge : false,
+      history     : true,
+    };
+
+    const query = Object.assign({}, options, opts);
+    const body = { input };
+
+    let endpoint = `/${itemType}`;
+    if (id) endpoint += `/${id}`;
+
+    return this._request(HTTP_DELETE, endpoint, { body, query });
   }
 }
 
