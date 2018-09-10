@@ -233,18 +233,18 @@ class Glpi {
       headers.Authorization = `Basic ${this._settings.auth}`;
     }
     return this._request(HTTP_GET, '/initSession', { headers })
-    .then((res) => {
-      this._session = res.body.session_token;
-      return res;
+    .then((response) => {
+      this._session = response.body.session_token;
+      return { status : response.statusCode, data : JSON.parse(response.body)};
     });
   }
 
   killSession() {
     log('Calling killSession()');
     return this._request(HTTP_GET, '/killSession')
-    .then((res) => {
+    .then((response) => {
       this._session = '';
-      return res;
+      return { status : response.statusCode, data : JSON.parse(response.body)};
     });
   }
 
@@ -255,15 +255,18 @@ class Glpi {
       password_forget_token,
       password,
     };
-    return this._request(HTTP_PUT, '/lostPassword', { body });
+    return this._request(HTTP_PUT, '/lostPassword', { body })
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
   }
 
   getMyProfiles() {
-    return this._request(HTTP_GET, '/getMyProfiles');
+    return this._request(HTTP_GET, '/getMyProfiles')
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body).myprofiles }));
   }
 
   getActiveProfile() {
-    return this._request(HTTP_GET, '/getActiveProfile');
+    return this._request(HTTP_GET, '/getActiveProfile')
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body).active_profile }));
   }
 
   /**
@@ -273,15 +276,18 @@ class Glpi {
    */
   changeActiveProfile(profiles_id) {
     const body = { profiles_id };
-    return this._request(HTTP_POST, '/changeActiveProfile', { body });
+    return this._request(HTTP_POST, '/changeActiveProfile', { body })
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
   }
 
   getMyEntities() {
-    return this._request(HTTP_GET, '/getMyEntities');
+    return this._request(HTTP_GET, '/getMyEntities')
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body).myentities }));
   }
 
   getActiveEntities() {
-    return this._request(HTTP_GET, '/getActiveEntities');
+    return this._request(HTTP_GET, '/getActiveEntities')
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body).active_entity }));
   }
 
   /**
@@ -295,7 +301,8 @@ class Glpi {
   }
 
   getFullSession() {
-    return this._request(HTTP_GET, '/getFullSession');
+    return this._request(HTTP_GET, '/getFullSession')
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
   }
 
   getItem(itemType, id, opts = {}) {
@@ -323,7 +330,8 @@ class Glpi {
     const query = Object.assign({}, options, opts);
     const endpoint = `/${itemType}/${id}`;
 
-    return this._request(HTTP_GET, endpoint, { query });
+    return this._request(HTTP_GET, endpoint, { query })
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
   }
 
   getItems(itemType, opts = {}) {
@@ -343,7 +351,8 @@ class Glpi {
     const query = Object.assign({}, options, opts);
     const endpoint = `/${itemType}`;
 
-    return this._request(HTTP_GET, endpoint, { query });
+    return this._request(HTTP_GET, endpoint, { query })
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
   }
 
   getSubItems(itemType, id, subItemType, opts = {}) {
@@ -392,7 +401,8 @@ class Glpi {
 
     const query = Object.assign({}, options, opts);
 
-    return this._request(HTTP_GET, endpoint, { query });
+    return this._request(HTTP_GET, endpoint, { query })
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
   }
 
   getMultipleItems(opts = {}) {
@@ -423,7 +433,8 @@ class Glpi {
     } else {
       throw new InvalidParameterError('Invalid parameter');
     }
-    return this._request(HTTP_GET, '/getMultipleItems', { query });
+    return this._request(HTTP_GET, '/getMultipleItems', { query })
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
   }
 
   listSearchOptions(itemType, raw = false) {
@@ -432,7 +443,8 @@ class Glpi {
     const query = (raw) ? { raw : true } : undefined;
     const endpoint = `/listSearchOptions/${itemType}`;
 
-    return this._request(HTTP_GET, endpoint, { query });
+    return this._request(HTTP_GET, endpoint, { query })
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
   }
 
   search(itemType, opts = {}) {
@@ -454,7 +466,8 @@ class Glpi {
     const query = Object.assign({}, options, opts);
     const endpoint = `/search/${itemType}`;
 
-    return this._request(HTTP_GET, endpoint, { query });
+    return this._request(HTTP_GET, endpoint, { query })
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
   }
 
   addItems(itemType, input = {}) {
@@ -466,7 +479,8 @@ class Glpi {
 
     const body = { input };
 
-    return this._request(HTTP_POST, `/${itemType}`, { body });
+    return this._request(HTTP_POST, `/${itemType}`, { body })
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
   }
 
   updateItems(itemType, id, input = {}) {
@@ -494,7 +508,8 @@ class Glpi {
 
     const body = { input };
 
-    return this._request(HTTP_PUT, endpoint, { body });
+    return this._request(HTTP_PUT, endpoint, { body })
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
 
   }
 
@@ -528,7 +543,8 @@ class Glpi {
     let endpoint = `/${itemType}`;
     if (id) endpoint += `/${id}`;
 
-    return this._request(HTTP_DELETE, endpoint, { body, query });
+    return this._request(HTTP_DELETE, endpoint, { body, query })
+    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
   }
 }
 
