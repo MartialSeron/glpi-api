@@ -8,8 +8,8 @@
   "private": true,
   "scripts": {
     "docs": "jsdoc --configure .jsdoc.json -R README.md --verbose",
-    "test": "nyc  --reporter=html --reporter=text mocha",
-    "report-coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov"
+    "test": "nyc --reporter=html --reporter=text mocha",
+    "report-coverage": "nyc report --reporter=text-lcov mocha > coverage.lcov && codecov"
   },
   "nyc": {
     "extension": [
