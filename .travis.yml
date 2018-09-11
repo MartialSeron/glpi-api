@@ -2,7 +2,8 @@ language: node_js
 node_js:
   - "lts/*"
 install:
-  - npm i -g codecov nyc mocha
+  - npm i -g codecov
+  - npm install
 script:
   - npm test
   - codecov
