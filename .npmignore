@@ -1,0 +1,10 @@
+.jsdoc.json
+.eslintrc.json
+.travis.yml
+*.code-workspace
+package-lock.json
+yarn-error.log
+yarn.lock
+./test
+./coverage
+./nyc_output
