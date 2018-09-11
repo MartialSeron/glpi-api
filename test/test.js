@@ -50,6 +50,8 @@ const config = {
     },
   },
 };
+
+
 describe('ServerError', () => {
   it('should return a ServerError with code 500', () => {
     const err = new ServerError();
@@ -57,6 +59,38 @@ describe('ServerError', () => {
     expect(err).to.have.property('code', 500);
   });
 });
+
+describe('_validateItemType()', () => {
+  it('should throw InvalidItemTypeError', () => {
+    const customItemType = 'MyCustomItemType';
+    const glpi = new Glpi(config.userToken);
+    try {
+      const result = glpi._validateItemType(customItemType);
+      expect(result).to.not.exist();
+    } catch(err) {
+      expect(err).to.be.instanceOf(InvalidItemTypeError);
+    }
+  });
+
+  it('should not throw InvalidItemTypeError (1 custom itemtype)', () => {
+    const customItemType = 'MyCustomItemType';
+    const glpi = new Glpi(config.userToken);
+    glpi.addCustomItemTypes(customItemType);
+    const result = glpi._validateItemType(customItemType);
+    expect(result).to.be.a('boolean', true);
+  });
+
+  it('should not throw InvalidItemTypeError (3 custom itemtypes)', () => {
+    const customItemTypes = ['MyCustomItemType1', 'MyCustomItemType2', 'MyCustomItemType3'];
+    const glpi = new Glpi(config.userToken);
+    glpi.addCustomItemTypes(customItemTypes);
+    customItemTypes.forEach((customItemType) => {
+      const result = glpi._validateItemType(customItemType);
+      expect(result).to.be.a('boolean', true);
+    });
+  });
+});
+
 
 describe('contructor()', () => {
   describe('With user_token Authorisation method', () => {
@@ -171,8 +205,6 @@ describe('contructor()', () => {
       }
     });
   });
-
-
 });
 
 describe('initSession()', () => {
@@ -1601,7 +1633,7 @@ describe('Authenticated POST methods', () => {
       .reply(expectedCode, expectedBody);
 
       try {
-        const result = await glpi.changeActiveEntities(requestedEntity)
+        const result = await glpi.changeActiveEntities(requestedEntity);
         expect(result).to.not.exist();
       } catch(err) {
         expect(err).to.be.instanceOf(ServerError);

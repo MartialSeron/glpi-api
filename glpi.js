@@ -15,6 +15,8 @@ const MissingItemTypeError = require('./errors/MissingItemTypeError');
 
 const log = debug('glpi-api');
 
+const itemTypes = require('./itemTypes.json');
+
 const HTTP_GET = 'get';
 const HTTP_POST = 'post';
 const HTTP_PUT = 'put';
@@ -81,6 +83,21 @@ class Glpi {
   }
 
   /**
+   * Add one or more custom itemTypes to the valid itemTypes list
+   *
+   * @param {string|array} customItemTypes String or array of string of itemType to add to the valid itemTypes list
+   * @memberof Glpi
+   */
+  addCustomItemTypes(customItemTypes) {
+    if (!_.isArray(customItemTypes)) {
+      customItemTypes = [customItemTypes];
+    }
+    customItemTypes.forEach((customItemType) => {
+      itemTypes.push(customItemType);
+    });
+  }
+
+  /**
    * Return the appropriate string for authentication
    * @param {Object} settings.auth 2 parameters to login with user authentication
    * @param {Object} settings.auth.username username parameter used for user authentication
@@ -140,7 +157,6 @@ class Glpi {
   }
 
   _validateItemType(itemType) {
-    const itemTypes = require('./itemTypes.json');
     if (!itemType) {
       throw new MissingItemTypeError('Missing item type');
     }
