@@ -2,7 +2,8 @@ language: node_js
 node_js:
   - "lts/*"
 install:
-  - yarn global add codecov
+  - npm i -g codecov
 script:
   - npm test
+  - npm run report-coverage
   - codecov
