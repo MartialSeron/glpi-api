@@ -4,70 +4,16 @@ const qs = require('qs');
 const _ = require('lodash');
 const debug = require('debug');
 
+const ServerError = require('./errors/ServerError');
+const InvalidItemTypeError = require('./errors/InvalidItemTypeError');
+const InvalidParameterError = require('./errors/InvalidParameterError');
+const MissingAuthorizationError = require('./errors/MissingAuthorizationError');
+const MissingAppTokenError = require('./errors/MissingAppTokenError');
+const MissingAPIURLError = require('./errors/MissingAPIURLError');
+const MissingHATEOASError = require('./errors/MissingHATEOASError');
+const MissingItemTypeError = require('./errors/MissingItemTypeError');
+
 const log = debug('glpi-api');
-
-class MissingAuthorizationError extends Error {
-  constructor(message) {
-    super();
-    Error.captureStackTrace(this, this.constructor);
-    this.name = 'MissingAuthorizationError';
-    this.message = message;
-  }
-}
-
-class MissingAppTokenError extends Error {
-  constructor(message) {
-    super();
-    Error.captureStackTrace(this, this.constructor);
-    this.name = 'MissingAppTokenError';
-    this.message = message;
-  }
-}
-
-class MissingAPIURLError extends Error {
-  constructor(message) {
-    super();
-    Error.captureStackTrace(this, this.constructor);
-    this.name = 'MissingAPIURLError';
-    this.message = message;
-  }
-}
-
-class MissingHATEOASError extends Error {
-  constructor(message) {
-    super();
-    Error.captureStackTrace(this, this.constructor);
-    this.name = 'MissingHATEOASError';
-    this.message = message;
-  }
-}
-
-class MissingItemTypeError extends Error {
-  constructor(message) {
-    super();
-    Error.captureStackTrace(this, this.constructor);
-    this.name = 'MissingItemTypeError';
-    this.message = message;
-  }
-}
-
-class InvalidItemTypeError extends Error {
-  constructor(message) {
-    super();
-    Error.captureStackTrace(this, this.constructor);
-    this.name = 'InvalidItemTypeError';
-    this.message = message;
-  }
-}
-
-class InvalidParameterError extends Error {
-  constructor(message) {
-    super();
-    Error.captureStackTrace(this, this.constructor);
-    this.name = 'InvalidParameterError';
-    this.message = message;
-  }
-}
 
 const HTTP_GET = 'get';
 const HTTP_POST = 'post';
@@ -191,24 +137,7 @@ class Glpi {
       // log('> RESPONSE :', res);
       return res;
     });
-
   }
-
-  // _queryString(options) {
-  //   let query = '';
-  //   Object.keys(options).forEach((key) => {
-  //     if (typeof options[key] === 'string') {
-  //       options[key] = (options[key]) ? options[key] : '';
-  //     } else if (typeof options[key] === 'boolean') {
-  //       options[key] = (options[key]) ? 1 : 0;
-  //     }
-  //   });
-
-  //   query = qs.stringify(options, { arrayFormat: 'indices',  addQueryPrefix: true });
-
-  //   log('query :', query);
-  //   return query;
-  // }
 
   _validateItemType(itemType) {
     const itemTypes = require('./itemTypes.json');
@@ -220,6 +149,19 @@ class Glpi {
       throw new InvalidItemTypeError('Invalid item type');
     }
     return true;
+  }
+
+  _parseContentRange(headers) {
+    const pattern = /(\d+)-(\d+)\/(\d+)/;
+    if (!headers || !headers['content-range'] || !pattern.test(headers['content-range'])) {
+      return {};
+    }
+    const [ , min, max, total ] = pattern.exec(headers['content-range']);
+    return {
+      min   : parseInt(min, 10),
+      max   : parseInt(max, 10),
+      total : parseInt(total, 10),
+    };
   }
 
   initSession() {
@@ -235,7 +177,10 @@ class Glpi {
     return this._request(HTTP_GET, '/initSession', { headers })
     .then((response) => {
       this._session = response.body.session_token;
-      return { status : response.statusCode, data : JSON.parse(response.body)};
+      return { code : response.statusCode, data : response.body };
+    })
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
     });
   }
 
@@ -244,7 +189,10 @@ class Glpi {
     return this._request(HTTP_GET, '/killSession')
     .then((response) => {
       this._session = '';
-      return { status : response.statusCode, data : JSON.parse(response.body)};
+      return { code : response.statusCode, data : response.body };
+    })
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
     });
   }
 
@@ -256,17 +204,26 @@ class Glpi {
       password,
     };
     return this._request(HTTP_PUT, '/lostPassword', { body })
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
+    .then((response) => ({ code : response.statusCode, data : response.body }))
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   getMyProfiles() {
     return this._request(HTTP_GET, '/getMyProfiles')
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body).myprofiles }));
+    .then((response) => ({ code : response.statusCode, data : response.body.myprofiles }))
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   getActiveProfile() {
     return this._request(HTTP_GET, '/getActiveProfile')
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body).active_profile }));
+    .then((response) => ({ code : response.statusCode, data : response.body.active_profile }))
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   /**
@@ -277,17 +234,26 @@ class Glpi {
   changeActiveProfile(profiles_id) {
     const body = { profiles_id };
     return this._request(HTTP_POST, '/changeActiveProfile', { body })
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
+    .then((response) => ({ code : response.statusCode, data : response.body }))
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   getMyEntities() {
     return this._request(HTTP_GET, '/getMyEntities')
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body).myentities }));
+    .then((response) => ({ code : response.statusCode, data : response.body.myentities }))
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   getActiveEntities() {
     return this._request(HTTP_GET, '/getActiveEntities')
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body).active_entity }));
+    .then((response) => ({ code : response.statusCode, data : response.body.active_entity }))
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   /**
@@ -297,12 +263,19 @@ class Glpi {
    */
   changeActiveEntities(entities_id, is_recursive = 'false') {
     const body = { entities_id, is_recursive };
-    return this._request(HTTP_POST, '/changeActiveEntities', { body });
+    return this._request(HTTP_POST, '/changeActiveEntities', { body })
+    .then((response) => ({ code : response.statusCode, data : response.body }))
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   getFullSession() {
     return this._request(HTTP_GET, '/getFullSession')
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
+    .then((response) => ({ code : response.statusCode, data : response.body.session }))
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   getItem(itemType, id, opts = {}) {
@@ -331,7 +304,10 @@ class Glpi {
     const endpoint = `/${itemType}/${id}`;
 
     return this._request(HTTP_GET, endpoint, { query })
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
+    .then((response) => ({ code : response.statusCode, data : response.body }))
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   getItems(itemType, opts = {}) {
@@ -352,7 +328,13 @@ class Glpi {
     const endpoint = `/${itemType}`;
 
     return this._request(HTTP_GET, endpoint, { query })
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
+    .then((response) => {
+      const range = this._parseContentRange(response.headers);
+      return { code : response.statusCode, data : response.body, range };
+    })
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   getSubItems(itemType, id, subItemType, opts = {}) {
@@ -402,7 +384,13 @@ class Glpi {
     const query = Object.assign({}, options, opts);
 
     return this._request(HTTP_GET, endpoint, { query })
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
+    .then((response) => {
+      const range = this._parseContentRange(response.headers);
+      return { code : response.statusCode, data : response.body, range };
+    })
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   getMultipleItems(opts = {}) {
@@ -434,7 +422,10 @@ class Glpi {
       throw new InvalidParameterError('Invalid parameter');
     }
     return this._request(HTTP_GET, '/getMultipleItems', { query })
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
+    .then((response) => ({ code : response.statusCode, data : response.body }))
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   listSearchOptions(itemType, raw = false) {
@@ -444,7 +435,10 @@ class Glpi {
     const endpoint = `/listSearchOptions/${itemType}`;
 
     return this._request(HTTP_GET, endpoint, { query })
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
+    .then((response) => ({ code : response.statusCode, data : response.body }))
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   search(itemType, opts = {}) {
@@ -467,7 +461,13 @@ class Glpi {
     const endpoint = `/search/${itemType}`;
 
     return this._request(HTTP_GET, endpoint, { query })
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
+    .then((response) => {
+      const range = this._parseContentRange(response.headers);
+      return { code : response.statusCode, data : response.body, range };
+    })
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   addItems(itemType, input = {}) {
@@ -480,7 +480,10 @@ class Glpi {
     const body = { input };
 
     return this._request(HTTP_POST, `/${itemType}`, { body })
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
+    .then((response) => ({ code : response.statusCode, data : response.body }))
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 
   updateItems(itemType, id, input = {}) {
@@ -509,7 +512,10 @@ class Glpi {
     const body = { input };
 
     return this._request(HTTP_PUT, endpoint, { body })
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
+    .then((response) => ({ code : response.statusCode, data : response.body }))
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
 
   }
 
@@ -544,7 +550,10 @@ class Glpi {
     if (id) endpoint += `/${id}`;
 
     return this._request(HTTP_DELETE, endpoint, { body, query })
-    .then((response) => ({ status : response.statusCode, data : JSON.parse(response.body)}));
+    .then((response) => ({ code : response.statusCode, data : response.body }))
+    .catch((err) => {
+      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+    });
   }
 }
 
