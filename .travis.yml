@@ -3,6 +3,7 @@ node_js:
   - "lts/*"
 install:
   - npm i -g codecov
+  - npm i -g nyc
 script:
   - npm test
   - npm run report-coverage
