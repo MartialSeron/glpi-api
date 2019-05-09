@@ -107,7 +107,7 @@ class Glpi {
     if (auth && auth.username) {
       const username = auth.username;
       const password = auth.password;
-      const base64 = new Buffer(`${username}:${password}`).toString('base64');
+      const base64 = Buffer.from(`${username}:${password}`).toString('base64');
       return base64;
     }
     return auth;

@@ -140,7 +140,7 @@ describe('contructor()', () => {
   describe('With Basic Authorisation method', () => {
     it('should create a Glpi object ', () => {
       const glpi = new Glpi(config.basicAuth);
-      const base64 = new Buffer(`${config.basicAuth.auth.username}:${config.basicAuth.auth.password}`).toString('base64');
+      const base64 = Buffer.from(`${config.basicAuth.auth.username}:${config.basicAuth.auth.password}`).toString('base64');
       expect(glpi).to.be.instanceOf(Glpi);
       expect(glpi).to.have.deep.own.property('_settings', {
         auth       : base64,
@@ -264,7 +264,7 @@ describe('initSession()', () => {
       nock.cleanAll();
     });
     it('should connect successfully', async () => {
-      const base64 = new Buffer(`${config.basicAuth.auth.username}:${config.basicAuth.auth.password}`).toString('base64');
+      const base64 = Buffer.from(`${config.basicAuth.auth.username}:${config.basicAuth.auth.password}`).toString('base64');
       const expectedCode = 200;
       const expectedBody = {
         session_token : genToken(),
@@ -291,7 +291,7 @@ describe('initSession()', () => {
         'le paramètre user_token semble incorrect',
       ];
 
-      const base64 = new Buffer(`${fakeConfig.auth.username}:${fakeConfig.auth.password}`).toString('base64');
+      const base64 = Buffer.from(`${fakeConfig.auth.username}:${fakeConfig.auth.password}`).toString('base64');
       nock(fakeConfig.apiurl)
       .matchHeader('app-token', fakeConfig.app_token)
       .matchHeader('authorization', `Basic ${base64}`)
