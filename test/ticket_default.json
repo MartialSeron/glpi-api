@@ -38,55 +38,55 @@
     "links": [
         {
             "rel": "Entity",
-            "href": "http://usertoken.glpiapi.test/apirest.php/Entity/3"
+            "href": "http://glpiapi.test/apirest.php/Entity/3"
         },
         {
             "rel": "User",
-            "href": "http://usertoken.glpiapi.test/apirest.php/User/135841"
+            "href": "http://glpiapi.test/apirest.php/User/135841"
         },
         {
             "rel": "User",
-            "href": "http://usertoken.glpiapi.test/apirest.php/User/135841"
+            "href": "http://glpiapi.test/apirest.php/User/135841"
         },
         {
             "rel": "RequestType",
-            "href": "http://usertoken.glpiapi.test/apirest.php/RequestType/5"
+            "href": "http://glpiapi.test/apirest.php/RequestType/5"
         },
         {
             "rel": "ITILCategory",
-            "href": "http://usertoken.glpiapi.test/apirest.php/ITILCategory/2502"
+            "href": "http://glpiapi.test/apirest.php/ITILCategory/2502"
         },
         {
             "rel": "Document_Item",
-            "href": "http://usertoken.glpiapi.test/apirest.php/Ticket/123456/Document_Item/"
+            "href": "http://glpiapi.test/apirest.php/Ticket/123456/Document_Item/"
         },
         {
             "rel": "TicketFollowup",
-            "href": "http://usertoken.glpiapi.test/apirest.php/Ticket/123456/TicketFollowup/"
+            "href": "http://glpiapi.test/apirest.php/Ticket/123456/TicketFollowup/"
         },
         {
             "rel": "TicketTask",
-            "href": "http://usertoken.glpiapi.test/apirest.php/Ticket/123456/TicketTask/"
+            "href": "http://glpiapi.test/apirest.php/Ticket/123456/TicketTask/"
         },
         {
             "rel": "TicketValidation",
-            "href": "http://usertoken.glpiapi.test/apirest.php/Ticket/123456/TicketValidation/"
+            "href": "http://glpiapi.test/apirest.php/Ticket/123456/TicketValidation/"
         },
         {
             "rel": "TicketCost",
-            "href": "http://usertoken.glpiapi.test/apirest.php/Ticket/123456/TicketCost/"
+            "href": "http://glpiapi.test/apirest.php/Ticket/123456/TicketCost/"
         },
         {
             "rel": "Problem_Ticket",
-            "href": "http://usertoken.glpiapi.test/apirest.php/Ticket/123456/Problem_Ticket/"
+            "href": "http://glpiapi.test/apirest.php/Ticket/123456/Problem_Ticket/"
         },
         {
             "rel": "Change_Ticket",
-            "href": "http://usertoken.glpiapi.test/apirest.php/Ticket/123456/Change_Ticket/"
+            "href": "http://glpiapi.test/apirest.php/Ticket/123456/Change_Ticket/"
         },
         {
             "rel": "Item_Ticket",
-            "href": "http://usertoken.glpiapi.test/apirest.php/Ticket/123456/Item_Ticket/"
+            "href": "http://glpiapi.test/apirest.php/Ticket/123456/Item_Ticket/"
         }
     ]
 }

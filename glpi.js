@@ -2,6 +2,8 @@ const request = require('request-promise-native');
 const { URL } = require('url');
 const _ = require('lodash');
 const debug = require('debug');
+const path = require('path');
+const fs = require('fs');
 
 const ServerError = require('./errors/ServerError');
 const InvalidItemTypeError = require('./errors/InvalidItemTypeError');
@@ -12,6 +14,8 @@ const MissingAPIURLError = require('./errors/MissingAPIURLError');
 const MissingHATEOASError = require('./errors/MissingHATEOASError');
 const MissingItemTypeError = require('./errors/MissingItemTypeError');
 const InvalidAPIURLError = require('./errors/InvalidAPIURLError');
+const InvalidHTTPMethodError = require('./errors/InvalidHTTPMethodError');
+const FileNotReadableError = require('./errors/FileNotReadableError');
 
 const log = debug('glpi-api');
 
