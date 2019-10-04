@@ -579,7 +579,7 @@ class Glpi {
    * @param {boolean} [opts.with_logs=false] Retrieve historical. Optional.
    * @returns {Promise}
    */
-  getMultipleItems(opts) {
+  getMultipleItems(opts = {}) {
     const options = {
       items             : [],
       expand_dropdowns  : false,
