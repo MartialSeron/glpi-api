@@ -1,4 +1,43 @@
-const request = require('request-promise-native');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>glpi.js - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Glpi.html">Glpi</a><ul class='methods'><li data-type='method'><a href="Glpi.html#_getAuth">_getAuth</a></li><li data-type='method'><a href="Glpi.html#_parseContentRange">_parseContentRange</a></li><li data-type='method'><a href="Glpi.html#_request">_request</a></li><li data-type='method'><a href="Glpi.html#_validateItemType">_validateItemType</a></li><li data-type='method'><a href="Glpi.html#addCustomItemTypes">addCustomItemTypes</a></li><li data-type='method'><a href="Glpi.html#addItems">addItems</a></li><li data-type='method'><a href="Glpi.html#changeActiveEntities">changeActiveEntities</a></li><li data-type='method'><a href="Glpi.html#changeActiveProfile">changeActiveProfile</a></li><li data-type='method'><a href="Glpi.html#deleteItems">deleteItems</a></li><li data-type='method'><a href="Glpi.html#download">download</a></li><li data-type='method'><a href="Glpi.html#getActiveEntities">getActiveEntities</a></li><li data-type='method'><a href="Glpi.html#getActiveProfile">getActiveProfile</a></li><li data-type='method'><a href="Glpi.html#getFullSession">getFullSession</a></li><li data-type='method'><a href="Glpi.html#getItem">getItem</a></li><li data-type='method'><a href="Glpi.html#getItems">getItems</a></li><li data-type='method'><a href="Glpi.html#getMultipleItems">getMultipleItems</a></li><li data-type='method'><a href="Glpi.html#getMyEntities">getMyEntities</a></li><li data-type='method'><a href="Glpi.html#getMyProfiles">getMyProfiles</a></li><li data-type='method'><a href="Glpi.html#getSubItems">getSubItems</a></li><li data-type='method'><a href="Glpi.html#initSession">initSession</a></li><li data-type='method'><a href="Glpi.html#killSession">killSession</a></li><li data-type='method'><a href="Glpi.html#listSearchOptions">listSearchOptions</a></li><li data-type='method'><a href="Glpi.html#lostPassword">lostPassword</a></li><li data-type='method'><a href="Glpi.html#search">search</a></li><li data-type='method'><a href="Glpi.html#updateItems">updateItems</a></li><li data-type='method'><a href="Glpi.html#upload">upload</a></li></ul></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">glpi.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const request = require('request-promise-native');
 const { URL } = require('url');
 const _ = require('lodash');
 const debug = require('debug');
@@ -64,7 +103,7 @@ class Glpi {
    * @param {Object} settings.apiurl URL of the apirest.php file
    */
   constructor(settings = {}) {
-    if (!settings.user_token &&
+    if (!settings.user_token &amp;&amp;
        (!settings.auth || (!settings.auth.username || !settings.auth.password))) {
       throw new MissingAuthorizationError('Missing Authorization header');
     }
@@ -97,16 +136,30 @@ class Glpi {
   }
 
   /**
+   * Add one or more custom itemTypes to the valid itemTypes list
+   *
+   * @param {string|array} customItemTypes String or array of string of itemType to add to the valid itemTypes list
+   * @returns {undefined}
+   */
+  addCustomItemTypes(customItemTypes) {
+    if (!_.isArray(customItemTypes)) {
+      customItemTypes = [customItemTypes];
+    }
+    customItemTypes.forEach((customItemType) => {
+      itemTypes.push(customItemType);
+    });
+  }
+
+  /**
    * Return the appropriate string for authentication
    *
    * @param {Object} settings.auth 2 parameters to login with user authentication
    * @param {Object} settings.auth.username username parameter used for user authentication
    * @param {Object} settings.auth.password password parameter used for user authentication
    * @returns {object}
-   * @private
    */
   _getAuth(auth) {
-    if (auth && auth.username) {
+    if (auth &amp;&amp; auth.username) {
       const username = auth.username;
       const password = auth.password;
       const base64 = Buffer.from(`${username}:${password}`).toString('base64');
@@ -125,7 +178,6 @@ class Glpi {
    * @param {object} options.headers  HTTP headers to add to the request
    * @param {object} options.query  URL query string to add to the request
    * @returns {object}
-   * @private
    */
   _request(method, endpoint, options) {
     if (![HTTP_GET, HTTP_POST, HTTP_PUT, HTTP_DELETE].includes(method)) {
@@ -144,7 +196,7 @@ class Glpi {
       headers['Session-Token'] = this._session;
     }
 
-    if (options && options.headers) {
+    if (options &amp;&amp; options.headers) {
       headers = { ...headers, ...options.headers };
       delete options.headers;
     }
@@ -186,7 +238,6 @@ class Glpi {
    *
    * @param {string} itemType itemType requested
    * @returns {boolean}
-   * @private
    */
   _validateItemType(itemType) {
     if (!itemType) {
@@ -204,7 +255,6 @@ class Glpi {
    *
    * @param {object} headers key/value object of HTTP headers
    * @returns {object}
-   * @private
    */
   _parseContentRange(headers) {
     const pattern = /(\d+)-(\d+)\/(\d+)/;
@@ -217,20 +267,6 @@ class Glpi {
       max   : parseInt(max, 10),
       total : parseInt(total, 10),
     };
-  }
-
-  /**
-   * Add one or more custom itemTypes to the valid itemTypes list
-   *
-   * @param {string|array} customItemTypes String or array of string of itemType to add to the valid itemTypes list
-   */
-  addCustomItemTypes(customItemTypes) {
-    if (!_.isArray(customItemTypes)) {
-      customItemTypes = [customItemTypes];
-    }
-    customItemTypes.forEach((customItemType) => {
-      itemTypes.push(customItemType);
-    });
   }
 
   /**
@@ -733,12 +769,12 @@ class Glpi {
    */
   updateItems(itemType, id, input = {}) {
     this._validateItemType(itemType);
-    if ((!input || _.isEmpty(input)) && (_.isPlainObject(id) || _.isArray(id))) {
+    if ((!input || _.isEmpty(input)) &amp;&amp; (_.isPlainObject(id) || _.isArray(id))) {
       input = id;
       id = undefined;
     }
 
-    if (!input || _.isEmpty(input) || (!id && !input.id && !input.length) || (id && input.length)) {
+    if (!input || _.isEmpty(input) || (!id &amp;&amp; !input.id &amp;&amp; !input.length) || (id &amp;&amp; input.length)) {
       throw new InvalidParameterError('Invalid parameter');
     }
 
@@ -783,7 +819,7 @@ class Glpi {
       id = undefined;
     }
 
-    if ((!id && !input.id && !input.length) || (id && input.length)) {
+    if ((!id &amp;&amp; !input.id &amp;&amp; !input.length) || (id &amp;&amp; input.length)) {
       throw new InvalidParameterError('Invalid parameter');
     }
 
@@ -878,3 +914,22 @@ class Glpi {
 }
 
 module.exports = Glpi;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Fri Oct 04 2019 16:24:24 GMT+0200 (GMT+02:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>
