@@ -1,6 +1,5 @@
 const request = require('request-promise-native');
 const { URL } = require('url');
-const qs = require('qs');
 const _ = require('lodash');
 const debug = require('debug');
 
@@ -12,6 +11,7 @@ const MissingAppTokenError = require('./errors/MissingAppTokenError');
 const MissingAPIURLError = require('./errors/MissingAPIURLError');
 const MissingHATEOASError = require('./errors/MissingHATEOASError');
 const MissingItemTypeError = require('./errors/MissingItemTypeError');
+const InvalidAPIURLError = require('./errors/InvalidAPIURLError');
 
 const log = debug('glpi-api');
 
@@ -73,15 +73,23 @@ class Glpi {
       throw new MissingAPIURLError('Missing API URL header');
     }
 
+    let apiurl;
+    try {
+      apiurl = new URL(settings.apiurl);
+    } catch (errApiurl) {
+      throw new InvalidAPIURLError(`Invalid API URL ${settings.apiurl}`);
+    }
+
     this._settings = {
       user_token : settings.user_token,
       auth       : this._getAuth(settings.auth),
       app_token  : settings.app_token,
-      apiurl     : settings.apiurl,
+      port       : settings.port,
+      apiurl,
     };
     this._session = '';
 
-    log(this._settings);
+    log('> SETTINGS :', this._settings);
   }
 
   /**
@@ -136,7 +144,7 @@ class Glpi {
 
     if (this._session) {
       req.headers['Session-Token'] = this._session;
-      }
+    }
 
     if (options) {
       req = { ...req, ...options, qs: options.query };
@@ -548,8 +556,47 @@ class Glpi {
       throw new ServerError(err);
     });
   }
+
+  /**
+   * Upload a document to GLPI
+   *
+   * @param {string} filePath Absolute path to the file to upload
+   * @param {string} description Description to add to document
+   */
+  upload(filePath, description = '') {
+    try {
+      fs.accessSync(filePath, fs.constants.R_OK);
+    } catch (err) {
+      throw new FileNotReadableError();
+    }
+
+    const file = path.parse(filePath);
+    const fileName = file.name + file.ext;
+
+    const readStream  = fs.createReadStream(filePath);
+    const uploadManifest = JSON.stringify({
+      input : {
+        name : description,
+        _filename: [fileName],
+      },
+    });
+
+    const formData = {
+      uploadManifest,
+      'filename[0]' : {
+        value : readStream,
+        options : {
+          filename : filePath,
+          contentType : null,
+        }
+      },
+    };
+
+    log('> formData :', formData);
+
+    return this._request(HTTP_POST, '/Document', { formData })
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 }

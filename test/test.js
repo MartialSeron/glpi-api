@@ -31,6 +31,7 @@ const MissingAppTokenError = require('../errors/MissingAppTokenError');
 const MissingAPIURLError = require('../errors/MissingAPIURLError');
 const MissingHATEOASError = require('../errors/MissingHATEOASError');
 const MissingItemTypeError = require('../errors/MissingItemTypeError');
+const InvalidAPIURLError = require('../errors/InvalidAPIURLError');
 
 const genToken = () => Math.random().toString(36).substr(2);
 const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
@@ -98,6 +99,17 @@ describe('_validateItemType()', () => {
 
 
 describe('contructor()', () => {
+  it('should throw InvalidAPIURLError', () => {
+    const fakeConfig = deepClone(config.userToken);
+    fakeConfig.apiurl = 'not_a_valid_url';
+    try {
+      const glpi = new Glpi(fakeConfig);
+      expect(glpi).to.be.undefined;
+    } catch(err) {
+      expect(err).to.be.instanceOf(InvalidAPIURLError);
+    }
+  });
+
   describe('With user_token Authorisation method', () => {
     it('should create a Glpi object', () => {
       const glpi = new Glpi(config.userToken);
