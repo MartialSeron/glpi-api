@@ -1,4 +1,4 @@
-const got = require('got');
+const request = require('request-promise-native');
 const { URL } = require('url');
 const qs = require('qs');
 const _ = require('lodash');
@@ -22,6 +22,8 @@ const HTTP_POST = 'post';
 const HTTP_PUT = 'put';
 const HTTP_DELETE = 'delete';
 
+const userAgent = 'glpi-api/1.4.0';
+
 /** Class to manage access to GLPI via REST API */
 class Glpi {
   /**
@@ -30,7 +32,7 @@ class Glpi {
    * Usage :
    *
    * ```
-   * const Glpi = require('./glpi');
+   * const Glpi = require('glpi-api');
    * const glpi = new Glpi({
    *   apiurl     : 'http://glpi.myserver.com/apirest.php',
    *   user_token : 'q56hqkniwot8wntb3z1qarka5atf365taaa2uyjrn',
@@ -113,46 +115,42 @@ class Glpi {
     return auth;
   }
 
-  /**
-   * Call a GET HTTP request and return response body
-   * @param {string} path path of the request
-   */
   _request(method, endpoint, options) {
-    const req = {
-      baseUrl : this._settings.apiurl,
-      json    : true,
+    if (![HTTP_GET, HTTP_POST, HTTP_PUT, HTTP_DELETE].includes(method)) {
+      throw new InvalidHTTPMethodError(`Invalid method: ${method}`);
+    }
+    log('options :', options);
+
+    let req = {
+      resolveWithFullResponse : true,
+      json : true,
+      baseUrl : this._settings.apiurl.href,
+      url : endpoint,
       headers : {
+        'User-Agent'    : userAgent,
+        'Cache-Control' : 'no-cache',
         'App-Token'     : this._settings.app_token,
-        'Session-Token' : this._session,
       },
       method,
-      port: 80,
-      protocol: 'http:',
     };
 
-    if (options && options.body) {
-      req.body = Object.assign({}, options.body);
-      for (let k in req.body) {
-        if (!req.body[k]) delete req.body[k];
+    if (this._session) {
+      req.headers['Session-Token'] = this._session;
       }
+
+    if (options) {
+      req = { ...req, ...options, qs: options.query };
     }
 
-    if (options && options.query) {
-      req.query = qs.stringify(options.query, { arrayFormat: 'indices',  addQueryPrefix: false });
-    }
-
-    if (options && options.headers) {
-      req.headers = Object.assign({}, req.headers, options.headers) ;
-    }
-
-    log('> METHOD :',method);
-    log('> ENDPOINT :',endpoint);
-    log('> REQUEST :',req);
-
-    return got(`${this._settings.apiurl}${endpoint}`, req)
-    .then((res) => {
-      // log('> RESPONSE :', res);
-      return res;
+    return request(req)
+    .then((incomingMessage) => {
+      const range = this._parseContentRange(incomingMessage.headers);
+      let response = {
+        code: incomingMessage.statusCode,
+        data: incomingMessage.body,
+        range,
+      };
+      return response;
     });
   }
 

@@ -35,15 +35,20 @@ const MissingItemTypeError = require('../errors/MissingItemTypeError');
 const genToken = () => Math.random().toString(36).substr(2);
 const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
 
+const baseURL = 'http://glpiapi.test';
+const apiurl = `${baseURL}/apirest.php`;
+const app_token = 'azertyuiop';
+const user_token = 'qsdfghjklm';
+
 const config = {
   userToken : {
-    app_token  : 'azertyuiop',
-    apiurl     : 'http://usertoken.glpiapi.test/apirest.php',
-    user_token : 'qsdfghjklm',
+    app_token,
+    apiurl,
+    user_token,
   },
   basicAuth : {
-    app_token : 'azertyuiop',
-    apiurl     : 'http://basicauth.glpiapi.test/apirest.php',
+    app_token,
+    apiurl,
     auth      : {
       username : 'glpi',
       password : 'glpi',
@@ -101,7 +106,8 @@ describe('contructor()', () => {
         user_token : config.userToken.user_token,
         auth       : undefined,
         app_token  : config.userToken.app_token,
-        apiurl     : config.userToken.apiurl,
+        apiurl     : new URL(config.userToken.apiurl),
+        port       : undefined,
       });
     });
 
@@ -145,8 +151,9 @@ describe('contructor()', () => {
       expect(glpi).to.have.deep.own.property('_settings', {
         auth       : base64,
         app_token  : config.basicAuth.app_token,
-        apiurl     : config.basicAuth.apiurl,
+        apiurl     : new URL(config.basicAuth.apiurl),
         user_token : undefined,
+        port       : undefined,
       });
     });
 
