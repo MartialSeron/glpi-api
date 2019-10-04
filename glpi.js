@@ -190,11 +190,11 @@ class Glpi {
     }
     return this._request(HTTP_GET, '/initSession', { headers })
     .then((response) => {
-      this._session = response.body.session_token;
-      return { code : response.statusCode, data : response.body };
+      this._session = response.data.session_token;
+      return response;
     })
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
@@ -203,10 +203,10 @@ class Glpi {
     return this._request(HTTP_GET, '/killSession')
     .then((response) => {
       this._session = '';
-      return { code : response.statusCode, data : response.body };
+      return response;
     })
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
@@ -218,25 +218,24 @@ class Glpi {
       password,
     };
     return this._request(HTTP_PUT, '/lostPassword', { body })
-    .then((response) => ({ code : response.statusCode, data : response.body }))
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
   getMyProfiles() {
     return this._request(HTTP_GET, '/getMyProfiles')
-    .then((response) => ({ code : response.statusCode, data : response.body.myprofiles }))
+    .then((response) => ({ code : response.code, data : response.data.myprofiles }))
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
   getActiveProfile() {
     return this._request(HTTP_GET, '/getActiveProfile')
-    .then((response) => ({ code : response.statusCode, data : response.body.active_profile }))
+    .then((response) => ({ code : response.code, data : response.data.active_profile }))
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
@@ -248,25 +247,24 @@ class Glpi {
   changeActiveProfile(profiles_id) {
     const body = { profiles_id };
     return this._request(HTTP_POST, '/changeActiveProfile', { body })
-    .then((response) => ({ code : response.statusCode, data : response.body }))
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
   getMyEntities() {
     return this._request(HTTP_GET, '/getMyEntities')
-    .then((response) => ({ code : response.statusCode, data : response.body.myentities }))
+    .then((response) => ({ code : response.code, data : response.data.myentities }))
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
   getActiveEntities() {
     return this._request(HTTP_GET, '/getActiveEntities')
-    .then((response) => ({ code : response.statusCode, data : response.body.active_entity }))
+    .then((response) => ({ code : response.code, data : response.data.active_entity }))
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
@@ -278,17 +276,16 @@ class Glpi {
   changeActiveEntities(entities_id, is_recursive = 'false') {
     const body = { entities_id, is_recursive };
     return this._request(HTTP_POST, '/changeActiveEntities', { body })
-    .then((response) => ({ code : response.statusCode, data : response.body }))
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
   getFullSession() {
     return this._request(HTTP_GET, '/getFullSession')
-    .then((response) => ({ code : response.statusCode, data : response.body.session }))
+    .then((response) => ({ code : response.code, data : response.data.session }))
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
@@ -318,9 +315,8 @@ class Glpi {
     const endpoint = `/${itemType}/${id}`;
 
     return this._request(HTTP_GET, endpoint, { query })
-    .then((response) => ({ code : response.statusCode, data : response.body }))
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
@@ -342,12 +338,8 @@ class Glpi {
     const endpoint = `/${itemType}`;
 
     return this._request(HTTP_GET, endpoint, { query })
-    .then((response) => {
-      const range = this._parseContentRange(response.headers);
-      return { code : response.statusCode, data : response.body, range };
-    })
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
@@ -398,12 +390,8 @@ class Glpi {
     const query = Object.assign({}, options, opts);
 
     return this._request(HTTP_GET, endpoint, { query })
-    .then((response) => {
-      const range = this._parseContentRange(response.headers);
-      return { code : response.statusCode, data : response.body, range };
-    })
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
@@ -436,9 +424,8 @@ class Glpi {
       throw new InvalidParameterError('Invalid parameter');
     }
     return this._request(HTTP_GET, '/getMultipleItems', { query })
-    .then((response) => ({ code : response.statusCode, data : response.body }))
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
@@ -449,9 +436,8 @@ class Glpi {
     const endpoint = `/listSearchOptions/${itemType}`;
 
     return this._request(HTTP_GET, endpoint, { query })
-    .then((response) => ({ code : response.statusCode, data : response.body }))
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
@@ -475,12 +461,8 @@ class Glpi {
     const endpoint = `/search/${itemType}`;
 
     return this._request(HTTP_GET, endpoint, { query })
-    .then((response) => {
-      const range = this._parseContentRange(response.headers);
-      return { code : response.statusCode, data : response.body, range };
-    })
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
@@ -494,9 +476,8 @@ class Glpi {
     const body = { input };
 
     return this._request(HTTP_POST, `/${itemType}`, { body })
-    .then((response) => ({ code : response.statusCode, data : response.body }))
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
   }
 
@@ -526,9 +507,8 @@ class Glpi {
     const body = { input };
 
     return this._request(HTTP_PUT, endpoint, { body })
-    .then((response) => ({ code : response.statusCode, data : response.body }))
     .catch((err) => {
-      throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
+      throw new ServerError(err);
     });
 
   }
@@ -564,7 +544,10 @@ class Glpi {
     if (id) endpoint += `/${id}`;
 
     return this._request(HTTP_DELETE, endpoint, { body, query })
-    .then((response) => ({ code : response.statusCode, data : response.body }))
+    .catch((err) => {
+      throw new ServerError(err);
+    });
+  }
     .catch((err) => {
       throw new ServerError(err.response.body[0], err.response.statusCode, err.response.body[1]);
     });
