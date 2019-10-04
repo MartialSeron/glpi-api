@@ -131,7 +131,6 @@ class Glpi {
     if (![HTTP_GET, HTTP_POST, HTTP_PUT, HTTP_DELETE].includes(method)) {
       throw new InvalidHTTPMethodError(`Invalid method: ${method}`);
     }
-    log('options :', options);
 
     log('> OPTIONS IN :', options);
 
@@ -163,7 +162,7 @@ class Glpi {
       if (options.query) {
         req.qs = options.query;
         delete options.query;
-    }
+      }
 
       req = { ...req, ...options };
     }
@@ -615,6 +614,27 @@ class Glpi {
     log('> formData :', formData);
 
     return this._request(HTTP_POST, '/Document', { formData })
+    .catch((err) => {
+      throw new ServerError(err);
+    });
+  }
+
+  /**
+   * Download a document from GLPI
+   *
+   * @param {string} filePath Absolute path to the file to upload
+   * @param {string} description Description to add to document
+   */
+  download(documentId) {
+    if (!documentId || isNaN(documentId)) {
+      throw new InvalidParameterError('Invalid parameter');
+    }
+
+    const headers = {
+      Accept : 'application/octet-stream',
+    };
+
+    return this._request(HTTP_GET, `/Document/${documentId}`, { headers })
     .catch((err) => {
       throw new ServerError(err);
     });

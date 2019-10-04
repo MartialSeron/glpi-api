@@ -2,6 +2,7 @@ const expect = require('chai').expect;
 const nock = require('nock');
 const _ = require('lodash');
 const path = require('path');
+const fs = require('fs');
 const Glpi = require('../glpi');
 
 const requestTypePhone = require('./requesttype_phone.json');
@@ -2144,6 +2145,64 @@ describe('Authenticated methods', () => {
 
         expect(result).to.have.property('code', expectedCode);
         expect(result).to.have.property('data').to.deep.equal(searchTicket);
+      });
+    });
+
+    describe('download()', () => {
+      it('should download a file content', async () => {
+        const documentId = 123;
+        const fileContent = fs.readFileSync(path.resolve(__dirname, '../test.txt'));
+        const expectedCode = 200;
+        const expectedBody = Buffer.from(fileContent).toString();
+
+        nock(config.userToken.apiurl)
+        .matchHeader('app-token', config.userToken.app_token)
+        .matchHeader('session-token', sessionToken)
+        .matchHeader('accept', 'application/octet-stream')
+        .get(`/Document/${documentId}`)
+        .reply(expectedCode, expectedBody);
+
+        const result = await glpi.download(documentId);
+
+        expect(result).to.have.property('code', expectedCode);
+        expect(result.data).to.be.equal(expectedBody);
+      });
+
+      it('should throw a ServerError (ERROR_ITEM_NOT_FOUND)', async () => {
+        const documentId = 123;
+        const expectedCode = 401;
+        const expectedBody = [
+          'ERROR_ITEM_NOT_FOUND',
+          'Élément introuvable',
+        ];
+
+        nock(config.userToken.apiurl)
+        .matchHeader('app-token', config.userToken.app_token)
+        .matchHeader('session-token', sessionToken)
+        .matchHeader('accept', 'application/octet-stream')
+        .get(`/Document/${documentId}`)
+        .reply(expectedCode, expectedBody);
+
+        try {
+          const result = await glpi.download(documentId);
+          expect(result).to.be.undefined;
+        } catch(err) {
+          expect(err).to.be.an.instanceOf(ServerError);
+          expect(err).to.have.property('code', expectedCode);
+          expect(err).to.have.property('message', expectedBody[0]);
+          expect(err).to.have.property('comment', expectedBody[1]);
+        }
+      });
+
+      it('should throw an InvalidParameterError', async () => {
+        const documentId = 'invalid_id';
+
+        try {
+          const result = await glpi.download(documentId);
+          expect(result).to.be.undefined;
+        } catch(err) {
+          expect(err).to.be.an.instanceOf(InvalidParameterError);
+        }
       });
     });
   });
