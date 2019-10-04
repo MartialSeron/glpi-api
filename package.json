@@ -34,6 +34,7 @@
     "got": "^9.2.0",
     "lodash": "^4.17.11",
     "qs": "^6.5.1",
+    "request": "^2.88.0",
     "request-promise": "^4.2.4",
     "request-promise-native": "^1.0.7"
   },

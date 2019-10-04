@@ -133,26 +133,42 @@ class Glpi {
     }
     log('options :', options);
 
+    log('> OPTIONS IN :', options);
+
+    let headers = {
+      'User-Agent'    : userAgent,
+      'Cache-Control' : 'no-cache',
+      'App-Token'     : this._settings.app_token,
+    };
+
+    if (this._session) {
+      headers['Session-Token'] = this._session;
+    }
+
+    if (options && options.headers) {
+      headers = { ...headers, ...options.headers };
+      delete options.headers;
+    }
+
     let req = {
       resolveWithFullResponse : true,
       json : true,
       baseUrl : this._settings.apiurl.href,
       url : endpoint,
-      headers : {
-        'User-Agent'    : userAgent,
-        'Cache-Control' : 'no-cache',
-        'App-Token'     : this._settings.app_token,
-      },
+      headers,
       method,
     };
 
-    if (this._session) {
-      req.headers['Session-Token'] = this._session;
+    if (options) {
+      if (options.query) {
+        req.qs = options.query;
+        delete options.query;
     }
 
-    if (options) {
-      req = { ...req, ...options, qs: options.query };
+      req = { ...req, ...options };
     }
+
+    log('> REQUEST OPTIONS :', req);
 
     return request(req)
     .then((incomingMessage) => {
