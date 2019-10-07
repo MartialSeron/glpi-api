@@ -1,10 +1,14 @@
 .jsdoc.json
 .eslintrc.json
 .travis.yml
+.codecov.yml
 *.code-workspace
 package-lock.json
 yarn-error.log
 yarn.lock
+*.lcov
 ./test
+test.txt
 ./coverage
 ./nyc_output
+./tmp
