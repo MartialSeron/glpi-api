@@ -9,7 +9,7 @@
     "docs": "jsdoc --configure .jsdoc.json -R README.md --verbose",
     "test": "nyc --reporter=html --reporter=text mocha",
     "coverage": "nyc --reporter=text-lcov --reporter=text mocha",
-    "report-coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov"
+    "report-coverage": "nyc report --reporter=text-lcov > coverage.lcov"
   },
   "repository": {
     "type": "git",
@@ -45,6 +45,7 @@
     "jsdoc": "^3.6.3",
     "mocha": "^5.0.1",
     "nock": "^9.2.3",
-    "nyc": "^11.4.1"
+    "nyc": "^11.4.1",
+    "codecov": "^3.6.1"
   }
 }

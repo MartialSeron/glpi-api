@@ -9,3 +9,5 @@ before_install:
 - npm install -g mocha
 script:
   - npm run report-coverage
+after_success:
+  - codecov
