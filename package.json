@@ -1,6 +1,6 @@
 {
   "name": "glpi-api",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Node module for GLPI REST API",
   "main": "glpi.js",
   "author": "Martial Séron <martial.seron@alturing.eu>",
@@ -8,7 +8,8 @@
   "scripts": {
     "docs": "jsdoc --configure .jsdoc.json -R README.md --verbose",
     "test": "nyc --reporter=html --reporter=text mocha",
-    "coverage": "nyc --reporter=text-lcov --reporter=text mocha"
+    "coverage": "nyc --reporter=text-lcov --reporter=text mocha",
+    "report-coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov"
   },
   "repository": {
     "type": "git",
