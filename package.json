@@ -9,7 +9,7 @@
     "docs": "jsdoc --configure .jsdoc.json -R README.md --verbose",
     "test": "nyc --reporter=html --reporter=text mocha",
     "coverage": "nyc --reporter=text-lcov --reporter=text mocha",
-    "report-coverage": "nyc report --reporter=text-lcov > coverage.lcov"
+    "report-coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov"
   },
   "repository": {
     "type": "git",
