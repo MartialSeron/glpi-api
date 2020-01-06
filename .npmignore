@@ -7,8 +7,9 @@ package-lock.json
 yarn-error.log
 yarn.lock
 *.lcov
-./test
+test/
 test.txt
-./coverage
-./nyc_output
-./tmp
+coverage/
+nyc_output/
+tmp/
+.nyc_output/

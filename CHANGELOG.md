@@ -1,3 +1,7 @@
+## 1.4.3
+
++ Update itemTypes.json for GLPI 9.4
+
 ## 1.4.0
 
 + Replace `got` module by `request-promise-native` module
