@@ -17,16 +17,17 @@ const InvalidAPIURLError = require('./errors/InvalidAPIURLError');
 const InvalidHTTPMethodError = require('./errors/InvalidHTTPMethodError');
 const FileNotReadableError = require('./errors/FileNotReadableError');
 
-const log = debug('glpi-api');
-
 const itemTypes = require('./itemTypes.json');
+const { version } = require('./package.json');
+
+const log = debug('glpi-api');
 
 const HTTP_GET = 'get';
 const HTTP_POST = 'post';
 const HTTP_PUT = 'put';
 const HTTP_DELETE = 'delete';
 
-const userAgent = 'glpi-api/1.4.0';
+const userAgent = `glpi-api/${version}`;
 
 /** Class to manage access to GLPI via REST API */
 class Glpi {
