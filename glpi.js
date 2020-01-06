@@ -178,6 +178,9 @@ class Glpi {
         range,
       };
       return response;
+    })
+    .catch((err) => {
+      throw new ServerError(err);
     });
   }
 
@@ -254,9 +257,6 @@ class Glpi {
     .then((response) => {
       this._session = response.data.session_token;
       return response;
-    })
-    .catch((err) => {
-      throw new ServerError(err);
     });
   }
 
@@ -267,13 +267,14 @@ class Glpi {
   killSession() {
     log('Calling killSession()');
 
+    if (!this._session) {
+      return Promise.resolve();
+    }
+
     return this._request(HTTP_GET, '/killSession')
     .then((response) => {
       this._session = '';
       return response;
-    })
-    .catch((err) => {
-      throw new ServerError(err);
     });
   }
 
@@ -295,10 +296,7 @@ class Glpi {
       password,
     };
 
-    return this._request(HTTP_PUT, '/lostPassword', { body })
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    return this._request(HTTP_PUT, '/lostPassword', { body });
   }
 
   /**
@@ -307,10 +305,7 @@ class Glpi {
    */
   getMyProfiles() {
     return this._request(HTTP_GET, '/getMyProfiles')
-    .then((response) => ({ code : response.code, data : response.data.myprofiles }))
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    .then((response) => ({ code : response.code, data : response.data.myprofiles }));
   }
 
   /**
@@ -319,10 +314,7 @@ class Glpi {
    */
   getActiveProfile() {
     return this._request(HTTP_GET, '/getActiveProfile')
-    .then((response) => ({ code : response.code, data : response.data.active_profile }))
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    .then((response) => ({ code : response.code, data : response.data.active_profile }));
   }
 
   /**
@@ -334,10 +326,7 @@ class Glpi {
    */
   changeActiveProfile(profiles_id) {
     const body = { profiles_id };
-    return this._request(HTTP_POST, '/changeActiveProfile', { body })
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    return this._request(HTTP_POST, '/changeActiveProfile', { body });
   }
 
   /**
@@ -347,10 +336,7 @@ class Glpi {
    */
   getMyEntities() {
     return this._request(HTTP_GET, '/getMyEntities')
-    .then((response) => ({ code : response.code, data : response.data.myentities }))
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    .then((response) => ({ code : response.code, data : response.data.myentities }));
   }
 
 
@@ -361,10 +347,7 @@ class Glpi {
    */
   getActiveEntities() {
     return this._request(HTTP_GET, '/getActiveEntities')
-    .then((response) => ({ code : response.code, data : response.data.active_entity }))
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    .then((response) => ({ code : response.code, data : response.data.active_entity }));
   }
 
   /**
@@ -376,10 +359,7 @@ class Glpi {
    */
   changeActiveEntities(entities_id, is_recursive = 'false') {
     const body = { entities_id, is_recursive };
-    return this._request(HTTP_POST, '/changeActiveEntities', { body })
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    return this._request(HTTP_POST, '/changeActiveEntities', { body });
   }
 
   /**
@@ -389,10 +369,7 @@ class Glpi {
    */
   getFullSession() {
     return this._request(HTTP_GET, '/getFullSession')
-    .then((response) => ({ code : response.code, data : response.data.session }))
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    .then((response) => ({ code : response.code, data : response.data.session }));
   }
 
   /**
@@ -444,10 +421,7 @@ class Glpi {
     const query = Object.assign({}, options, opts);
     const endpoint = `/${itemType}/${id}`;
 
-    return this._request(HTTP_GET, endpoint, { query })
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    return this._request(HTTP_GET, endpoint, { query });
   }
 
   /**
@@ -482,10 +456,7 @@ class Glpi {
     const query = Object.assign({}, options, opts);
     const endpoint = `/${itemType}`;
 
-    return this._request(HTTP_GET, endpoint, { query })
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    return this._request(HTTP_GET, endpoint, { query });
   }
 
   /**
@@ -548,10 +519,7 @@ class Glpi {
 
     const query = Object.assign({}, options, opts);
 
-    return this._request(HTTP_GET, endpoint, { query })
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    return this._request(HTTP_GET, endpoint, { query });
   }
 
   /**
@@ -607,10 +575,7 @@ class Glpi {
     } else {
       throw new InvalidParameterError('Invalid parameter');
     }
-    return this._request(HTTP_GET, '/getMultipleItems', { query })
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    return this._request(HTTP_GET, '/getMultipleItems', { query });
   }
 
   /**
@@ -626,10 +591,7 @@ class Glpi {
     const query = (raw) ? { raw : true } : undefined;
     const endpoint = `/listSearchOptions/${itemType}`;
 
-    return this._request(HTTP_GET, endpoint, { query })
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    return this._request(HTTP_GET, endpoint, { query });
   }
 
   /**
@@ -692,10 +654,7 @@ class Glpi {
     const query = Object.assign({}, options, opts);
     const endpoint = `/search/${itemType}`;
 
-    return this._request(HTTP_GET, endpoint, { query })
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    return this._request(HTTP_GET, endpoint, { query });
   }
 
   /**
@@ -715,10 +674,7 @@ class Glpi {
 
     const body = { input };
 
-    return this._request(HTTP_POST, `/${itemType}`, { body })
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    return this._request(HTTP_POST, `/${itemType}`, { body });
   }
 
   /**
@@ -756,10 +712,7 @@ class Glpi {
 
     const body = { input };
 
-    return this._request(HTTP_PUT, endpoint, { body })
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    return this._request(HTTP_PUT, endpoint, { body });
 
   }
 
@@ -805,10 +758,7 @@ class Glpi {
     let endpoint = `/${itemType}`;
     if (id) endpoint += `/${id}`;
 
-    return this._request(HTTP_DELETE, endpoint, { body, query })
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    return this._request(HTTP_DELETE, endpoint, { body, query });
   }
 
   /**
@@ -849,10 +799,7 @@ class Glpi {
 
     log('> formData :', formData);
 
-    return this._request(HTTP_POST, '/Document', { formData })
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    return this._request(HTTP_POST, '/Document', { formData });
   }
 
   /**
@@ -870,10 +817,7 @@ class Glpi {
       Accept : 'application/octet-stream',
     };
 
-    return this._request(HTTP_GET, `/Document/${documentId}`, { headers })
-    .catch((err) => {
-      throw new ServerError(err);
-    });
+    return this._request(HTTP_GET, `/Document/${documentId}`, { headers });
   }
 }
 
