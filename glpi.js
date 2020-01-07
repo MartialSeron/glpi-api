@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 
 const ServerError = require('./errors/ServerError');
+const SessionNotFoundError = require('./errors/SessionNotFoundError');
 const InvalidItemTypeError = require('./errors/InvalidItemTypeError');
 const InvalidParameterError = require('./errors/InvalidParameterError');
 const MissingAuthorizationError = require('./errors/MissingAuthorizationError');
@@ -197,8 +198,8 @@ class Glpi {
       throw new MissingItemTypeError('Missing item type');
     }
 
-    if (itemTypes.indexOf(itemType)===-1) {
-      throw new InvalidItemTypeError('Invalid item type');
+    if (itemTypes.indexOf(itemType) === -1) {
+      throw new InvalidItemTypeError(`Invalid item type '${itemType}'`);
     }
     return true;
   }
@@ -269,7 +270,7 @@ class Glpi {
     log('Calling killSession()');
 
     if (!this._session) {
-      return Promise.resolve();
+      throw new SessionNotFoundError('No session found');
     }
 
     return this._request(HTTP_GET, '/killSession')

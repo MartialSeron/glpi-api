@@ -1,4 +1,4 @@
-const expect = require('chai').expect;
+const chai = require('chai');
 const nock = require('nock');
 const _ = require('lodash');
 const path = require('path');
@@ -28,6 +28,7 @@ const upload = require('./upload.json');
 const upload_without_comment = require('./upload_without_comment.json');
 
 const ServerError = require('../errors/ServerError');
+const SessionNotFoundError = require('../errors/SessionNotFoundError');
 const InvalidItemTypeError = require('../errors/InvalidItemTypeError');
 const InvalidParameterError = require('../errors/InvalidParameterError');
 const MissingAuthorizationError = require('../errors/MissingAuthorizationError');
@@ -41,6 +42,8 @@ const FileNotReadableError = require('../errors/FileNotReadableError');
 
 const genToken = () => Math.random().toString(36).substr(2);
 const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
+
+const expect = chai.expect;
 
 const baseURL = 'http://glpiapi.test';
 const apiurl = `${baseURL}/apirest.php`;
@@ -1025,6 +1028,17 @@ describe('Authenticated methods', () => {
         const result = await glpi.killSession();
         expect(result).to.have.property('code', expectedCode);
         expect(glpi._session).to.be.equal('');
+      });
+
+
+      it('should ignore log out if no session', async () => {
+        try {
+          delete glpi._session;
+          const result = await glpi.killSession();
+          expect(result).to.be.undefined;
+        } catch(err) {
+          expect(err).to.be.an.instanceOf(SessionNotFoundError);
+        }
       });
 
       it('should throw a ServerError with code 401 if session_token does not match', async () => {
