@@ -1,6 +1,6 @@
 {
   "name": "glpi-api",
-  "version": "1.4.3",
+  "version": "1.5.0",
   "description": "Node module for GLPI REST API",
   "main": "glpi.js",
   "author": "Martial Séron <martial.seron@alturing.eu>",

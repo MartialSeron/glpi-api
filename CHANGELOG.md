@@ -1,4 +1,4 @@
-## 1.4.3
+## 1.5.0
 
 + Update itemTypes.json for GLPI 9.4
 
