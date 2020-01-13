@@ -1,3 +1,8 @@
+## 1.6.0
+
++ Add input parameter to `upload()` method
++ Update README.md
+
 ## 1.5.0
 
 + Update itemTypes.json for GLPI 9.4
