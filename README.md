@@ -49,8 +49,45 @@ const glpi = new GlpiApi(config);
 ```javascript
 glpi.initSession()
 .then(() => glpi.getItem('Ticket', 123456))
-.then((ticket) => {
+.then((ret) => {
+  const ticket = ret.data;
   // Do what you want with your ticket
+})
+.catch((err) => {
+  // Manage error
+})
+.then(() => glpi.killSession());
+```
+
+#### Add a requester to a ticket
+
+```javascript
+glpi.initSession()
+.then(() => glpi.addItems('Ticket_User', {
+  users_id : 154,
+  tickets_id : 123456,
+  type : 1,
+}))
+.catch((err) => {
+  // Manage error
+})
+.then(() => glpi.killSession());
+```
+
+#### Accept solution (since 9.3)
+
+```javascript
+glpi.initSession()
+.then(() => glpi.getSubItems('Ticket', 123456, 'ITILSolution'))
+.then((ret) => {
+  if (!ret.data.length) {
+    throw new Error('No solution for this item');
+  }
+  const { id : solutionId } = ret.data[0]; // the first solution in array is the most recent solution
+  return glpi.updateItems('ITILSolution', solutionId, {
+    status : 3,
+    users_id_approval : 154, // if approver is different than logged user
+  });
 })
 .catch((err) => {
   // Manage error
@@ -62,7 +99,32 @@ glpi.initSession()
 
 ```javascript
 glpi.initSession()
-.then(() => glpi.updateItems('Ticket', ticket.id))
+.then(() => glpi.updateItems('Ticket', 123456, { status : 6 }))
+.catch((err) => {
+  // Manage error
+})
+.then(() => glpi.killSession());
+```
+
+#### Upload a file and attach it to a ticket
+
+```javascript
+const file = path.resolve(__dirname, 'myfile.txt');
+
+glpi.initSession()
+.then(() => glpi.upload(file, {
+  entities_id : 0,
+  is_recursive : true,
+  documentcategories_id : 2,
+}))
+.then((ret) => {
+  const { id : documents_id } = ret.data;
+  return glpi.addItems('Document_Item', {
+    documents_id,
+    items_id : 123456,
+    itemtype : 'Ticket',
+  })
+})
 .catch((err) => {
   // Manage error
 })
@@ -77,13 +139,9 @@ Tests are only available for cloned repository
 $ npm test
 ```
 
-## Versioning
-
-I use [SemVer](http://semver.org/) for versioning.
-
 ## Authors
 
-* **Martial Séron** - *Initial work* - [MartialSeron](https://github.com/MartialSeron)
+* **Martial Séron** - [MartialSeron](https://github.com/MartialSeron)
 
 ## License
 
