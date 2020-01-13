@@ -767,10 +767,11 @@ class Glpi {
    * Upload a document to GLPI
    *
    * @param {string} filePath Absolute path to the file to upload
-   * @param {string} [description] Description to add to document
+   * @param {object} [input={}] an object with fields of itemtype to be inserted.
+   * @param {string} [description=''] Description to add to document
    * @returns {Promise}
    */
-  upload(filePath, description = '') {
+  upload(filePath, input = {}, description = '') {
     try {
       fs.accessSync(filePath, fs.constants.R_OK);
     } catch (err) {
@@ -783,6 +784,7 @@ class Glpi {
     const readStream  = fs.createReadStream(filePath);
     const uploadManifest = JSON.stringify({
       input : {
+        ...input,
         name : description,
         _filename: [fileName],
       },
