@@ -25,6 +25,7 @@ const searchOptionsTicketRaw = require('./searchoptions_ticket_raw.json');
 const searchTicket = require('./search_ticket.json');
 const searchTicketNoOpts = require('./search_ticket_no_opts.json');
 const upload = require('./upload.json');
+const upload_custom_filename = require('./upload_custom_filename.json');
 const upload_without_comment = require('./upload_without_comment.json');
 
 const ServerError = require('../errors/ServerError');
@@ -991,6 +992,28 @@ describe('Authenticated methods', () => {
         .reply(expectedCode, expectedBody);
 
         const result = await glpi.upload(path.resolve(__dirname, '../test.txt'), 'comment');
+
+        expect(result).to.have.property('code', expectedCode);
+        expect(JSON.stringify(result.data)).to.be.equal(JSON.stringify(expectedBody));
+      });
+
+
+      it('should upload a file (new way)', async () => {
+        const expectedCode = 200;
+        const expectedBody = upload_custom_filename;
+        const expectedName = 'my_custom_name.txt';
+        const expectedMime = 'plain/text';
+        nock(config.userToken.apiurl)
+        .matchHeader('app-token', config.userToken.app_token)
+        .matchHeader('session-token', sessionToken)
+        .post('/Document')
+        .reply(expectedCode, expectedBody);
+
+        const result = await glpi.upload({
+          filePath: path.resolve(__dirname, '../test.txt'),
+          fileName: expectedName,
+          fileType: expectedMime,
+        }, 'comment');
 
         expect(result).to.have.property('code', expectedCode);
         expect(JSON.stringify(result.data)).to.be.equal(JSON.stringify(expectedBody));
@@ -2232,7 +2255,3 @@ describe('Authenticated methods', () => {
     });
   });
 });
-
-
-
-

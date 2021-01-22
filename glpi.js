@@ -771,32 +771,44 @@ class Glpi {
    * @param {string} [description=''] Description to add to document
    * @returns {Promise}
    */
-  upload(filePath, input = {}, description = '') {
+  upload(fileinfo, input = {}, description = '') {
+    let filePath;
+    let fileName;
+    let fileType = null;
+
+    // for compatibility with previous version
+    if (typeof fileinfo === 'string') {
+      filePath = fileinfo;
+      const file = path.parse(filePath);
+      fileName = file.name + file.ext;
+    } else {
+      ({ filePath, fileName, fileType } = fileinfo);
+    }
+    
     try {
       fs.accessSync(filePath, fs.constants.R_OK);
     } catch (err) {
       throw new FileNotReadableError();
     }
 
-    const file = path.parse(filePath);
-    const fileName = file.name + file.ext;
-
     const readStream  = fs.createReadStream(filePath);
     const uploadManifest = JSON.stringify({
       input : {
-        ...input,
-        name : description,
+        name : description || fileName,
         _filename: [fileName],
+        ...input,
       },
     });
+
+    log('> uploadManifest :', uploadManifest);
 
     const formData = {
       uploadManifest,
       'filename[0]' : {
         value : readStream,
         options : {
-          filename : filePath,
-          contentType : null,
+          filename : fileName,
+          contentType : fileType,
         }
       },
     };
