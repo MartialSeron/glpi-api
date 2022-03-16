@@ -6,6 +6,7 @@ Node module for [GLPI](https://glpi-project.org/) REST API
 [![Build Status](https://travis-ci.com/MartialSeron/glpi-api.svg?branch=master)](https://travis-ci.com/MartialSeron/glpi-api)
 [![codecov](https://codecov.io/gh/MartialSeron/glpi-api/branch/master/graph/badge.svg)](https://codecov.io/gh/MartialSeron/glpi-api)
 ![license](https://img.shields.io/badge/license-MIT-orange.svg)
+[![Rate this package](https://badges.openbase.com/js/rating/glpi-api.svg?style=openbase&token=XpZR4YwDxshSCxxHIHLyFxTampwwyaL1jxh8vKRshfA=)](https://openbase.com/js/glpi-api?utm_source=embedded&amp;utm_medium=badge&amp;utm_campaign=rate-badge)
 
 ## Installation
 
